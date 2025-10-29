@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Patrones de custodia -->
+    <string-array name="custody_patterns">
+        <item>Semanas alternas</item>
+        <item>Días alternos</item>
+        <item>Patrón 2-2-3</item>
+    </string-array>
+
+    <!-- Días de la semana -->
+    <string-array name="days_of_week">
+        <item>Domingo</item>
+        <item>Lunes</item>
+        <item>Martes</item>
+        <item>Miércoles</item>
+        <item>Jueves</item>
+        <item>Viernes</item>
+        <item>Sábado</item>
+    </string-array>
+
+    <!-- Divisiones de verano -->
+    <string-array name="summer_divisions">
+        <item>Mitad y mitad</item>
+        <item>Todo el periodo</item>
+        <item>Alternar cada 7 días</item>
+        <item>Alternar por semanas naturales (x-Dom)</item>
+        <item>Por quincenas (1-15 y 16-31)</item>
+    </string-array>
+
+    <!-- Divisiones de vacaciones -->
+    <string-array name="vacation_divisions">
+        <item>Por mitad</item>
+        <item>Quincenal</item>
+        <item>Semanal</item>
+    </string-array>
+
+    <!-- Selector de padre/custodio -->
+    <string-array name="parent_selector">
+        <item>Custodio 1</item>
+        <item>Custodio 2</item>
+    </string-array>
+
+    <!-- Reglas de años -->
+    <string-array name="year_rule_selector">
+        <item>Años pares</item>
+        <item>Años impares</item>
+        <item>Siempre</item>
+    </string-array>
+</resources>

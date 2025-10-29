@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Custodiaapp" parent="Theme.Material3.Light.NoActionBar">
+        <!-- Colores principales -->
+        <item name="colorPrimary">#2196F3</item>
+        <item name="colorPrimaryVariant">#1976D2</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+
+        <!-- Colores secundarios -->
+        <item name="colorSecondary">#03DAC6</item>
+        <item name="colorSecondaryVariant">#018786</item>
+        <item name="colorOnSecondary">#000000</item>
+
+        <!-- Colores de fondo -->
+        <item name="android:colorBackground">#FAFAFA</item>
+        <item name="colorSurface">#FFFFFF</item>
+        <item name="colorOnSurface">#000000</item>
+
+        <!-- Colores de error -->
+        <item name="colorError">#B00020</item>
+        <item name="colorOnError">#FFFFFF</item>
+
+        <!-- Barra de estado -->
+        <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>
