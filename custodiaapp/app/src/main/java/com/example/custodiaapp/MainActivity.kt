@@ -221,6 +221,8 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnSaveConfig).setOnClickListener { saveConfiguration() }
         findViewById<Button>(R.id.btnManageSpecialDates).setOnClickListener { showSpecialDatesManager() }
         findViewById<Button>(R.id.btnManageNoCustody).setOnClickListener { showPeriodsManager() }
+        findViewById<Button>(R.id.btnManageChristmas).setOnClickListener { showChristmasManager() }
+        findViewById<Button>(R.id.btnManageEaster).setOnClickListener { showEasterManager() }
 
         setupSpinnerListener(R.id.spinnerPattern) { pos ->
             viewModel.custodyPattern = when(pos) {
@@ -431,73 +433,6 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
-    // ============= DIÁLOGO DE PERÍODOS (FUSIONA VERANO Y SIN CUSTODIA) =============
-    private fun showPeriodsManager() {
-        val dialogView = layoutInflater.inflate(R.layout.dialog_summer_event, null)
-
-        val edtStartDate = dialogView.findViewById<EditText>(R.id.edtSummerStartDate)
-        val edtEndDate = dialogView.findViewById<EditText>(R.id.edtSummerEndDate)
-        val edtDesc = dialogView.findViewById<EditText>(R.id.edtSummerDesc)
-        val spinnerParent = dialogView.findViewById<Spinner>(R.id.spinnerSummerParent)
-
-        val parents = arrayOf(viewModel.parent1Name, viewModel.parent2Name, "Sin custodia")
-        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, parents)
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        spinnerParent.adapter = adapter
-
-        edtStartDate.setOnClickListener {
-            showDatePickerDialog { date -> edtStartDate.setText(date) }
-        }
-
-        edtEndDate.setOnClickListener {
-            showDatePickerDialog { date -> edtEndDate.setText(date) }
-        }
-
-        AlertDialog.Builder(this)
-            .setTitle("Añadir Período Especial")
-            .setView(dialogView)
-            .setPositiveButton("Guardar") { dialog, _ ->
-                val startDateStr = edtStartDate.text.toString()
-                val endDateStr = edtEndDate.text.toString()
-                val description = edtDesc.text.toString().ifEmpty { "Período especial" }
-                val selectedParentIndex = spinnerParent.selectedItemPosition
-
-                if (startDateStr.isNotEmpty() && endDateStr.isNotEmpty()) {
-                    try {
-                        val startParts = startDateStr.split("/")
-                        val startDate = LocalDate.of(startParts[2].toInt(), startParts[1].toInt(), startParts[0].toInt())
-
-                        val endParts = endDateStr.split("/")
-                        val endDate = LocalDate.of(endParts[2].toInt(), endParts[1].toInt(), endParts[0].toInt())
-
-                        val parentType = when (selectedParentIndex) {
-                            0 -> ParentType.PARENT1
-                            1 -> ParentType.PARENT2
-                            2 -> ParentType.NONE
-                            else -> ParentType.NONE
-                        }
-
-                        if (parentType == ParentType.NONE) {
-                            viewModel.noCustodyPeriods.add(NoCustodyPeriod(startDate, endDate, description))
-                        } else {
-                            viewModel.summerEvents.add(SummerEvent(startDate, endDate, parentType, description))
-                        }
-
-                        updateDisplay()
-                        Toast.makeText(this, "Período guardado correctamente", Toast.LENGTH_SHORT).show()
-                    } catch (e: Exception) {
-                        Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
-                    }
-                } else {
-                    Toast.makeText(this, "Por favor completa las fechas", Toast.LENGTH_SHORT).show()
-                }
-                dialog.dismiss()
-            }
-            .setNegativeButton("Cancelar") { dialog, _ -> dialog.dismiss() }
-            .setNeutralButton("Ver Lista") { _, _ -> showPeriodsList() }
-            .show()
-    }
-
     private fun showPeriodsList() {
         val allPeriods = mutableListOf<Pair<String, Int>>()
 
@@ -597,6 +532,145 @@ class MainActivity : AppCompatActivity() {
         }, calendar.get(java.util.Calendar.YEAR),
             calendar.get(java.util.Calendar.MONTH),
             calendar.get(java.util.Calendar.DAY_OF_MONTH)).show()
+    }
+
+    // ============= GESTIÓN DE NAVIDAD =============
+    private fun showChristmasManager() {
+        showPeriodsManager(prefilledDescription = "Navidad")
+    }
+
+    // ============= GESTIÓN DE SEMANA SANTA =============
+    private fun showEasterManager() {
+        val currentYear = LocalDate.now().year
+        val easterDates = mutableListOf<Pair<Int, LocalDate>>()
+
+        // Calcular Semana Santa para año actual y siguiente
+        for (year in currentYear..(currentYear + 1)) {
+            val easterDate = calculateEasterSunday(year)
+            easterDates.add(year to easterDate)
+        }
+
+        // Mostrar diálogo informativo
+        val message = buildString {
+            easterDates.forEach { (year, date) ->
+                val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.getDefault())
+                append("📅 Semana Santa $year:\n")
+                append("   Domingo de Resurrección: ${date.format(formatter)}\n\n")
+            }
+            append("Pulsa 'Configurar' para añadir este período")
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle("🐣 Información de Semana Santa")
+            .setMessage(message)
+            .setPositiveButton("Configurar Semana Santa") { _, _ ->
+                showPeriodsManager(prefilledDescription = "Semana Santa")
+            }
+            .setNegativeButton("Cerrar", null)
+            .show()
+    }
+
+    /**
+     * Calcula el Domingo de Resurrección usando el algoritmo de Gauss
+     * Fuente: https://es.wikipedia.org/wiki/Computus
+     */
+    private fun calculateEasterSunday(year: Int): LocalDate {
+        val a = year % 19
+        val b = year / 100
+        val c = year % 100
+        val d = b / 4
+        val e = b % 4
+        val f = (b + 8) / 25
+        val g = (b - f + 1) / 3
+        val h = (19 * a + b - d - g + 15) % 30
+        val i = c / 4
+        val k = c % 4
+        val l = (32 + 2 * e + 2 * i - h - k) % 7
+        val m = (a + 11 * h + 22 * l) / 451
+        val month = (h + l - 7 * m + 114) / 31
+        val day = ((h + l - 7 * m + 114) % 31) + 1
+
+        return LocalDate.of(year, month, day)
+    }
+
+    // ============= GESTIÓN DE PERÍODOS (MODIFICADA PARA SOPORTAR PRE-RELLENO) =============
+    private fun showPeriodsManager(prefilledDescription: String = "") {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_summer_event, null)
+
+        val edtStartDate = dialogView.findViewById<EditText>(R.id.edtSummerStartDate)
+        val edtEndDate = dialogView.findViewById<EditText>(R.id.edtSummerEndDate)
+        val edtDesc = dialogView.findViewById<EditText>(R.id.edtSummerDesc)
+        val spinnerParent = dialogView.findViewById<Spinner>(R.id.spinnerSummerParent)
+
+        // Pre-rellenar descripción si se proporciona
+        if (prefilledDescription.isNotEmpty()) {
+            edtDesc.setText(prefilledDescription)
+        }
+
+        val parents = arrayOf(viewModel.parent1Name, viewModel.parent2Name, "Sin custodia")
+        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, parents)
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinnerParent.adapter = adapter
+
+        edtStartDate.setOnClickListener {
+            showDatePickerDialog { date -> edtStartDate.setText(date) }
+        }
+
+        edtEndDate.setOnClickListener {
+            showDatePickerDialog { date -> edtEndDate.setText(date) }
+        }
+
+        val title = when (prefilledDescription) {
+            "Navidad" -> "🎄 Añadir Período de Navidad"
+            "Semana Santa" -> "🐣 Añadir Período de Semana Santa"
+            else -> "Añadir Período Especial"
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle(title)
+            .setView(dialogView)
+            .setPositiveButton("Guardar") { dialog, _ ->
+                val startDateStr = edtStartDate.text.toString()
+                val endDateStr = edtEndDate.text.toString()
+                val description = edtDesc.text.toString().ifEmpty {
+                    if (prefilledDescription.isNotEmpty()) prefilledDescription else "Período especial"
+                }
+                val selectedParentIndex = spinnerParent.selectedItemPosition
+
+                if (startDateStr.isNotEmpty() && endDateStr.isNotEmpty()) {
+                    try {
+                        val startParts = startDateStr.split("/")
+                        val startDate = LocalDate.of(startParts[2].toInt(), startParts[1].toInt(), startParts[0].toInt())
+
+                        val endParts = endDateStr.split("/")
+                        val endDate = LocalDate.of(endParts[2].toInt(), endParts[1].toInt(), endParts[0].toInt())
+
+                        val parentType = when (selectedParentIndex) {
+                            0 -> ParentType.PARENT1
+                            1 -> ParentType.PARENT2
+                            2 -> ParentType.NONE
+                            else -> ParentType.NONE
+                        }
+
+                        if (parentType == ParentType.NONE) {
+                            viewModel.noCustodyPeriods.add(NoCustodyPeriod(startDate, endDate, description))
+                        } else {
+                            viewModel.summerEvents.add(SummerEvent(startDate, endDate, parentType, description))
+                        }
+
+                        updateDisplay()
+                        Toast.makeText(this, "Período guardado correctamente", Toast.LENGTH_SHORT).show()
+                    } catch (e: Exception) {
+                        Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    Toast.makeText(this, "Por favor completa las fechas", Toast.LENGTH_SHORT).show()
+                }
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancelar") { dialog, _ -> dialog.dismiss() }
+            .setNeutralButton("Ver Lista") { _, _ -> showPeriodsList() }
+            .show()
     }
 
     // ============= CALCULADORAS Y CLASES INTERNAS =============

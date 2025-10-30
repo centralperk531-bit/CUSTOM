@@ -484,7 +484,7 @@
                             </LinearLayout>
                         </com.google.android.material.card.MaterialCardView>
 
-                        <!-- Card Eventos y Períodos (SIN botón de eventos de verano) -->
+                        <!-- Card Eventos y Períodos -->
                         <com.google.android.material.card.MaterialCardView
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -521,6 +521,24 @@
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
                                     android:text="Gestionar Períodos Especiales"
+                                    app:cornerRadius="8dp"
+                                    style="@style/Widget.Material3.Button.OutlinedButton"
+                                    android:layout_marginBottom="8dp"/>
+
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/btnManageChristmas"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:text="🎄 Navidad"
+                                    app:cornerRadius="8dp"
+                                    style="@style/Widget.Material3.Button.OutlinedButton"
+                                    android:layout_marginBottom="8dp"/>
+
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/btnManageEaster"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:text="🐣 Semana Santa"
                                     app:cornerRadius="8dp"
                                     style="@style/Widget.Material3.Button.OutlinedButton"/>
                             </LinearLayout>
