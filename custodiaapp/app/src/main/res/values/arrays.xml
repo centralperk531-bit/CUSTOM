@@ -2,20 +2,22 @@
 <resources>
     <!-- Patrones de custodia -->
     <string-array name="custody_patterns">
-        <item>Semanas alternas</item>
-        <item>Días alternos</item>
-        <item>Patrón 2-2-3</item>
+        <item>Semanas Alternas</item>
+        <item>Días Alternos</item>
+        <item>Entre Semana / Fines de Semana</item>
+        <item>Personalizado</item>
     </string-array>
 
     <!-- Días de la semana -->
     <string-array name="days_of_week">
-        <item>Domingo</item>
         <item>Lunes</item>
         <item>Martes</item>
         <item>Miércoles</item>
         <item>Jueves</item>
         <item>Viernes</item>
         <item>Sábado</item>
+        <item>Domingo</item>
+
     </string-array>
 
     <!-- Divisiones de verano -->

@@ -27,12 +27,16 @@ class MainActivity : AppCompatActivity() {
 
     private val custodyCalculator by lazy { CustodyCalculator(viewModel) }
     private val calendarRenderer by lazy { CalendarRenderer(viewModel) }
+    private val rangeSelectionManager = RangeSelectionManager()
+    private var pendingEventType: String? = null // "PERIOD", "SPECIAL_DATE", "CHRISTMAS", "EASTER"
+    private val selectionModeToast by lazy {
+        Toast.makeText(this, "", Toast.LENGTH_SHORT)
+    }
 
     // Views principales
     private val edtParent1 by lazy { findViewById<EditText>(R.id.edtParent1) }
     private val edtParent2 by lazy { findViewById<EditText>(R.id.edtParent2) }
     private val edtStartDate by lazy { findViewById<EditText>(R.id.edtStartDate) }
-    private val edtSearchDate by lazy { findViewById<EditText>(R.id.edtSearchDate) }
     private val tvResult by lazy { findViewById<TextView>(R.id.tvResult) }
     private val tvStats by lazy { findViewById<TextView>(R.id.tvStats) }
     private val progressBar by lazy { findViewById<ProgressBar>(R.id.progressBar) }
@@ -41,6 +45,12 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Forzar tamaño de fuente estándar en todos los dispositivos
+        val configuration = resources.configuration
+        configuration.fontScale = 1.2f
+        resources.updateConfiguration(configuration, resources.displayMetrics)
+
         setContentView(R.layout.activity_main)
 
         initializeViewModel()
@@ -100,6 +110,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupViewPager() {
+        calendarRenderer.rangeSelectionManager = rangeSelectionManager
         calendarAdapter = CalendarPagerAdapter(this, calendarRenderer, viewModel)
         viewPager.apply {
             adapter = calendarAdapter
@@ -123,8 +134,7 @@ class MainActivity : AppCompatActivity() {
         val spinnerConfigs = listOf(
             SpinnerConfig(R.id.spinnerPattern, R.array.custody_patterns, 0),
             SpinnerConfig(R.id.spinnerDay, R.array.days_of_week, 1),
-            SpinnerConfig(R.id.spinnerSummerDiv, R.array.summer_divisions, 0),
-            SpinnerConfig(R.id.spinnerSummerYearRule, R.array.year_rule_selector, 0)
+            SpinnerConfig(R.id.spinnerSummerDiv, R.array.summer_divisions, 0)
         )
 
         spinnerConfigs.forEach { config ->
@@ -148,8 +158,7 @@ class MainActivity : AppCompatActivity() {
         val parentSpinnerIds = listOf(
             R.id.spinnerEvenYearStarts,
             R.id.spinnerOddYearStarts,
-            R.id.spinnerSummerFirst,
-            R.id.spinnerChristmasDiv
+            R.id.spinnerPatternStartsWith
         )
 
         parentSpinnerIds.forEach { spinnerId ->
@@ -175,28 +184,31 @@ class MainActivity : AppCompatActivity() {
                 is AlternateWeeks -> 0
                 is AlternateDays -> 1
                 is WeekdaysWeekends -> 2
-                else -> 3
+                is CustomDaysPattern -> 3
+                else -> 0 // por defecto semanas alternas
             }
         )
+        findViewById<Spinner>(R.id.spinnerDay).setSelection(viewModel.changeDayOfWeek - 1)
         findViewById<Spinner>(R.id.spinnerDay).setSelection(viewModel.changeDayOfWeek)
         findViewById<Spinner>(R.id.spinnerSummerDiv).setSelection(viewModel.summerDivision.ordinal)
-        findViewById<Spinner>(R.id.spinnerChristmasDiv).setSelection(
-            if (viewModel.christmasPeriod1FirstParent == ParentType.PARENT1) 0 else 1
-        )
         findViewById<Spinner>(R.id.spinnerEvenYearStarts).setSelection(
             if (viewModel.evenYearStartsWith == 1) 0 else 1
         )
         findViewById<Spinner>(R.id.spinnerOddYearStarts).setSelection(
             if (viewModel.oddYearStartsWith == 1) 0 else 1
         )
-        findViewById<Spinner>(R.id.spinnerSummerFirst).setSelection(
-            if (viewModel.summerFirstParent == ParentType.PARENT1) 0 else 1
+        findViewById<Spinner>(R.id.spinnerPatternStartsWith).setSelection(
+            if (viewModel.patternStartsWithParent == 1) 0 else 1
         )
-        findViewById<Spinner>(R.id.spinnerSummerYearRule).setSelection(viewModel.summerYearRule.ordinal)
-    }
 
+        // RadioGroup
+        val radioGroup = findViewById<RadioGroup>(R.id.radioGroupApplicationMode)
+        when (viewModel.patternApplicationMode) {
+            "FORWARD" -> radioGroup.check(R.id.radioModeForward)
+            "FROM_DATE" -> radioGroup.check(R.id.radioModeFromDate)
+        }
+    }
     private fun setupListeners() {
-        edtSearchDate.setOnClickListener { showDatePicker() }
         edtStartDate.setOnClickListener { showStartDatePicker() }
 
         edtParent1.setOnFocusChangeListener { _, hasFocus ->
@@ -223,23 +235,28 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnManageNoCustody).setOnClickListener { showPeriodsManager() }
         findViewById<Button>(R.id.btnManageChristmas).setOnClickListener { showChristmasManager() }
         findViewById<Button>(R.id.btnManageEaster).setOnClickListener { showEasterManager() }
+        findViewById<Button>(R.id.btnManagePatternChanges).setOnClickListener { showPatternChangesManager() }
+        findViewById<Button>(R.id.btnDeleteAll).setOnClickListener { showDeleteAllConfirmation() }
 
         setupSpinnerListener(R.id.spinnerPattern) { pos ->
-            viewModel.custodyPattern = when(pos) {
-                0 -> AlternateWeeks(startWithParent = 1)
-                1 -> AlternateDays(startWithParent = 1)
-                2 -> WeekdaysWeekends(weekdaysParent = 1, weekendsParent = 2)
-                else -> CustomPattern()
+            when(pos) {
+                0 -> viewModel.custodyPattern = AlternateWeeks(startWithParent = 1)
+                1 -> viewModel.custodyPattern = AlternateDays(startWithParent = 1)
+                2 -> viewModel.custodyPattern = WeekdaysWeekends(weekdaysParent = 1, weekendsParent = 2)
+                3 -> {
+                    // Mostrar diálogo de configuración personalizada
+                    showCustomPatternDialog()
+                }
             }
         }
 
-        setupSpinnerListener(R.id.spinnerDay) { viewModel.changeDayOfWeek = it }
+        /* setupSpinnerListener(R.id.spinnerDay) { viewModel.changeDayOfWeek = it } */
+        setupSpinnerListener(R.id.spinnerDay) { position ->
+            viewModel.changeDayOfWeek = position + 1  // 0->1, 1->2, ..., 6->7
+        }
+        findViewById<Spinner>(R.id.spinnerDay).setSelection(viewModel.changeDayOfWeek - 1)
         setupSpinnerListener(R.id.spinnerSummerDiv) { pos ->
             viewModel.summerDivision = VacationDivision.values()[pos.coerceIn(0, 4)]
-        }
-        setupSpinnerListener(R.id.spinnerChristmasDiv) { pos ->
-            viewModel.christmasPeriod1FirstParent = if (pos == 0) ParentType.PARENT1 else ParentType.PARENT2
-            viewModel.christmasPeriod2FirstParent = if (pos == 0) ParentType.PARENT2 else ParentType.PARENT1
         }
         setupSpinnerListener(R.id.spinnerEvenYearStarts) {
             viewModel.evenYearStartsWith = if (it == 0) 1 else 2
@@ -247,11 +264,18 @@ class MainActivity : AppCompatActivity() {
         setupSpinnerListener(R.id.spinnerOddYearStarts) {
             viewModel.oddYearStartsWith = if (it == 0) 1 else 2
         }
-        setupSpinnerListener(R.id.spinnerSummerFirst) {
-            viewModel.summerFirstParent = if (it == 0) ParentType.PARENT1 else ParentType.PARENT2
+        setupSpinnerListener(R.id.spinnerPatternStartsWith) {
+            viewModel.patternStartsWithParent = if (it == 0) 1 else 2
         }
-        setupSpinnerListener(R.id.spinnerSummerYearRule) { pos ->
-            viewModel.summerYearRule = YearRule.values()[pos.coerceIn(0, 2)]
+
+        // RadioGroup listener
+        findViewById<RadioGroup>(R.id.radioGroupApplicationMode).setOnCheckedChangeListener { _, checkedId ->
+            viewModel.patternApplicationMode = when (checkedId) {
+                R.id.radioModeForward -> "FORWARD"
+                R.id.radioModeFromDate -> "FROM_DATE"
+                else -> "FORWARD"
+            }
+            updateDisplay()
         }
     }
 
@@ -290,10 +314,19 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateDisplay() {
+        // PROTEGER pendingEventType durante el updateDisplay
+        val savedEventType = pendingEventType
+
         if (::calendarAdapter.isInitialized) {
             calendarAdapter.notifyDataSetChanged()
         }
         updateStatsAsync()
+
+        // RESTAURAR pendingEventType después de actualizar
+        if (savedEventType != null) {
+            pendingEventType = savedEventType
+            android.util.Log.d("CustodiaApp", "updateDisplay - pendingEventType restaurado a: $savedEventType")
+        }
     }
 
     private fun updateStatsAsync() {
@@ -311,24 +344,18 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun searchCustody() {
-        val dateStr = edtSearchDate.text.toString().trim()
-        if (dateStr.isEmpty()) {
-            Toast.makeText(this, R.string.error_empty_date, Toast.LENGTH_SHORT).show()
-            return
-        }
-
         try {
-            val parts = dateStr.split("/")
-            val day = parts[0].toInt()
-            val month = parts[1].toInt()
-            val year = parts[2].toInt()
+            val datePicker = findViewById<DatePicker>(R.id.datePickerSearch)
+            val day = datePicker.dayOfMonth
+            val month = datePicker.month + 1
+            val year = datePicker.year
 
             val date = LocalDate.of(year, month, day)
             val custody = custodyCalculator.getCustodyForDate(date)
 
             tvResult.text = buildString {
                 append("${getString(R.string.label_date)}: ")
-                append(date.format(DateTimeFormatter.ofPattern("EEEE, dd/MM/yyyy", Locale.getDefault())))
+                append(date.format(DateTimeFormatter.ofPattern("EEEE, dd/MM/yyyy", Locale("es", "ES"))))
                 append("\n\n")
                 if (custody.parent == ParentType.NONE) {
                     append("Sin custodia")
@@ -338,12 +365,364 @@ class MainActivity : AppCompatActivity() {
                 if (custody.note.isNotEmpty()) append("\n\n${custody.note}")
             }
         } catch (e: Exception) {
-            Toast.makeText(this, R.string.error_invalid_date, Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Error al consultar fecha", Toast.LENGTH_SHORT).show()
         }
     }
 
-    // ============= DIÁLOGO DE FECHAS ESPECIALES =============
+    private fun getParentName(parent: ParentType): String = when(parent) {
+        ParentType.PARENT1 -> viewModel.parent1Name
+        ParentType.PARENT2 -> viewModel.parent2Name
+        ParentType.NONE -> "Sin custodia"
+    }
+
+    private fun showDatePickerDialog(onDateSelected: (String) -> Unit) {
+        val calendar = java.util.Calendar.getInstance()
+        DatePickerDialog(this, { _, year, month, day ->
+            onDateSelected("%02d/%02d/%04d".format(day, month + 1, year))
+        }, calendar.get(java.util.Calendar.YEAR),
+            calendar.get(java.util.Calendar.MONTH),
+            calendar.get(java.util.Calendar.DAY_OF_MONTH)).show()
+    }
+
+    private fun showStartDatePicker() {
+        // SIEMPRE usar la fecha de HOY al abrir el calendario
+        val calendar = java.util.Calendar.getInstance()
+
+        DatePickerDialog(this, { _, year, month, day ->
+            val selectedDate = "%02d/%02d/%04d".format(day, month + 1, year)
+            edtStartDate.setText(selectedDate)
+
+            try {
+                viewModel.startDate = LocalDate.of(year, month + 1, day)
+                updateDisplay()
+            } catch (e: Exception) {
+                Toast.makeText(this, "Fecha inválida", Toast.LENGTH_SHORT).show()
+            }
+        }, calendar.get(java.util.Calendar.YEAR),
+            calendar.get(java.util.Calendar.MONTH),
+            calendar.get(java.util.Calendar.DAY_OF_MONTH)).show()
+    }
+
+    // ============= GESTIÓN DE FECHAS DESDE CALENDARIO =============
+    fun showDatePickerForContextMenu(date: LocalDate, onDateConfigured: () -> Unit) {
+        if (!rangeSelectionManager.isSelecting) {
+            // Primera selección: marcar inicio
+            rangeSelectionManager.startSelection(date)
+            updateDisplay()
+            Toast.makeText(this, "Fecha inicio seleccionada. Toca otra fecha para completar el rango.", Toast.LENGTH_SHORT).show()
+        } else {
+            // Segunda selección: completar rango y mostrar diálogo
+            rangeSelectionManager.updateEndDate(date)
+            val range = rangeSelectionManager.completeSelection()
+
+            if (range != null) {
+                // Llamar al diálogo correspondiente según el tipo
+                when (pendingEventType) {
+                    "PERIOD" -> showRangeConfigDialog(range.first, range.second, "") { updateDisplay() }
+                    "CHRISTMAS" -> showRangeConfigDialog(range.first, range.second, "Navidad") { updateDisplay() }
+                    "EASTER" -> showRangeConfigDialog(range.first, range.second, "Semana Santa") { updateDisplay() }
+                    "SPECIAL_DATE" -> {
+                        // Para fecha especial solo usar el primer día
+                        showSpecialDateConfigDialog(range.first)
+                    }
+                }
+            }
+
+            rangeSelectionManager.clearSelection()
+            pendingEventType = null
+            updateDisplay()
+        }
+    }
+
+    fun onCalendarDateClicked(date: LocalDate) {
+        // LOG DE DEPURACIÓN
+        android.util.Log.d("CustodiaApp", "onCalendarDateClicked llamado con fecha: $date")
+        android.util.Log.d("CustodiaApp", "pendingEventType actual: $pendingEventType")
+        android.util.Log.d("CustodiaApp", "rangeSelectionManager.isSelecting: ${rangeSelectionManager.isSelecting}")
+
+        if (pendingEventType == null) {
+            // No hay selección activa, ignorar
+            android.util.Log.d("CustodiaApp", "pendingEventType es null, saliendo...")
+            Toast.makeText(this, "⚠️ DEBUG: pendingEventType es NULL", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        if (!rangeSelectionManager.isSelecting) {
+            // Primera selección: marcar inicio
+            android.util.Log.d("CustodiaApp", "Primera selección - marcando inicio")
+            rangeSelectionManager.startSelection(date)
+            updateDisplay()
+            showSelectionToast("Fecha inicio: ${date.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))}. Selecciona fecha final.")
+        } else {
+            // Segunda selección: completar rango
+            android.util.Log.d("CustodiaApp", "Segunda selección - completando rango")
+            rangeSelectionManager.updateEndDate(date)
+            val range = rangeSelectionManager.completeSelection()
+
+            if (range != null) {
+                // Llamar al diálogo correspondiente según el tipo
+                // NO limpiar pendingEventType aquí, se limpiará en los botones del diálogo
+                when (pendingEventType) {
+                    "PERIOD" -> showRangeConfigDialog(range.first, range.second, "") { updateDisplay() }
+                    "CHRISTMAS" -> showRangeConfigDialog(range.first, range.second, "Navidad") { updateDisplay() }
+                    "EASTER" -> showRangeConfigDialog(range.first, range.second, "Semana Santa") { updateDisplay() }
+                    "SPECIAL_DATE" -> {
+                        // Para fecha especial solo usar el primer día
+                        showSpecialDateConfigDialog(range.first)
+                    }
+                }
+            }
+
+            // Limpiar solo el rangeSelectionManager, NO el pendingEventType
+            // El pendingEventType se limpiará cuando el usuario pulse Guardar o Cancelar
+            rangeSelectionManager.clearSelection()
+            updateDisplay()
+        }
+    }
+
+    private fun showSelectionToast(message: String) {
+        selectionModeToast.setText(message)
+        selectionModeToast.show()
+    }
+
+    private fun showRangeConfigDialog(startDate: LocalDate, endDate: LocalDate, prefilledDescription: String = "", onDateConfigured: () -> Unit) {
+        // Verificar si hay conflictos con eventos existentes en el rango
+        val conflictingEvents = mutableListOf<String>()
+        var current = startDate
+        while (!current.isAfter(endDate)) {
+            viewModel.specialDates.find { it.date == current }?.let {
+                conflictingEvents.add("Fecha especial: ${it.date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))} - ${it.description}")
+            }
+            current = current.plusDays(1)
+        }
+
+        val conflictingPeriods = viewModel.summerEvents.filter { event ->
+            !(event.endDate.isBefore(startDate) || event.startDate.isAfter(endDate))
+        }.map { "${it.description}: ${it.startDate.format(DateTimeFormatter.ofPattern("dd/MM/yy"))} - ${it.endDate.format(DateTimeFormatter.ofPattern("dd/MM/yy"))}" }
+
+        val conflictingNoCustody = viewModel.noCustodyPeriods.filter { period ->
+            !(period.endDate.isBefore(startDate) || period.startDate.isAfter(endDate))
+        }.map { "Sin custodia: ${it.startDate.format(DateTimeFormatter.ofPattern("dd/MM/yy"))} - ${it.endDate.format(DateTimeFormatter.ofPattern("dd/MM/yy"))}" }
+
+        conflictingEvents.addAll(conflictingPeriods)
+        conflictingEvents.addAll(conflictingNoCustody)
+
+        if (conflictingEvents.isNotEmpty()) {
+            AlertDialog.Builder(this)
+                .setTitle("⚠️ Conflictos detectados")
+                .setMessage("El rango seleccionado solapa con:\n\n${conflictingEvents.joinToString("\n")}\n\n¿Quieres eliminar estos eventos y crear el nuevo?")
+                .setPositiveButton("Sí, sobrescribir") { _, _ ->
+                    // Eliminar eventos conflictivos
+                    var currentDate = startDate
+                    while (!currentDate.isAfter(endDate)) {
+                        viewModel.specialDates.removeAll { it.date == currentDate }
+                        currentDate = currentDate.plusDays(1)
+                    }
+                    viewModel.summerEvents.removeAll { event ->
+                        !(event.endDate.isBefore(startDate) || event.startDate.isAfter(endDate))
+                    }
+                    viewModel.noCustodyPeriods.removeAll { period ->
+                        !(period.endDate.isBefore(startDate) || period.startDate.isAfter(endDate))
+                    }
+
+                    // Continuar con el diálogo de configuración
+                    showRangeConfigDialogInternal(startDate, endDate, prefilledDescription, onDateConfigured)
+                }
+                .setNegativeButton("No, cancelar") { _, _ ->
+                    pendingEventType = null
+                    rangeSelectionManager.clearSelection()
+                    updateDisplay()
+                }
+                .show()
+            return
+        }
+
+        showRangeConfigDialogInternal(startDate, endDate, prefilledDescription, onDateConfigured)
+    }
+
+    private fun showRangeConfigDialogInternal(startDate: LocalDate, endDate: LocalDate, prefilledDescription: String = "", onDateConfigured: () -> Unit) {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_summer_event, null)
+
+        val edtStartDate = dialogView.findViewById<EditText>(R.id.edtSummerStartDate)
+        val edtEndDate = dialogView.findViewById<EditText>(R.id.edtSummerEndDate)
+        val edtDesc = dialogView.findViewById<EditText>(R.id.edtSummerDesc)
+        val spinnerParent = dialogView.findViewById<Spinner>(R.id.spinnerSummerParent)
+        val tvLegend = dialogView.findViewById<TextView>(R.id.tvYearRuleLegend)
+
+        // Pre-rellenar descripción si existe
+        if (prefilledDescription.isNotEmpty()) {
+            edtDesc.setText(prefilledDescription)
+
+            // Mostrar leyenda para Navidad y Semana Santa
+            val parent1Name = viewModel.parent1Name
+            val parent2Name = viewModel.parent2Name
+            val evenYearStarts = if (viewModel.evenYearStartsWith == 1) parent1Name else parent2Name
+            val oddYearStarts = if (viewModel.oddYearStartsWith == 1) parent1Name else parent2Name
+
+            tvLegend.text = "ℹ️ Recuerda:\n• Años PARES: empieza $evenYearStarts\n• Años IMPARES: empieza $oddYearStarts"
+            tvLegend.visibility = View.VISIBLE
+        } else {
+            tvLegend.visibility = View.GONE
+        }
+
+        // Pre-rellenar con el rango seleccionado
+        val formatter = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")
+        edtStartDate.setText(startDate.format(formatter))
+        edtEndDate.setText(endDate.format(formatter))
+
+        // Deshabilitar edición de fechas
+        edtStartDate.isEnabled = false
+        edtEndDate.isEnabled = false
+
+        val parents = arrayOf(viewModel.parent1Name, viewModel.parent2Name, "Sin custodia")
+        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, parents)
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinnerParent.adapter = adapter
+
+        val title = when (prefilledDescription) {
+            "Navidad" -> "🎄 Configurar Período de Navidad"
+            "Semana Santa" -> "🐣 Configurar Período de Semana Santa"
+            else -> "Configurar período seleccionado"
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle(title)
+            .setView(dialogView)
+            .setPositiveButton("Guardar") { dialog, _ ->
+                val description = edtDesc.text.toString().ifEmpty {
+                    if (prefilledDescription.isNotEmpty()) prefilledDescription else "Período especial"
+                }
+                val selectedParentIndex = spinnerParent.selectedItemPosition
+
+                val parentType = when (selectedParentIndex) {
+                    0 -> ParentType.PARENT1
+                    1 -> ParentType.PARENT2
+                    2 -> ParentType.NONE
+                    else -> ParentType.NONE
+                }
+
+                if (parentType == ParentType.NONE) {
+                    viewModel.noCustodyPeriods.add(NoCustodyPeriod(startDate, endDate, description))
+                } else {
+                    viewModel.summerEvents.add(SummerEvent(startDate, endDate, parentType, description))
+                }
+
+                // Limpiar el modo de selección completamente
+                pendingEventType = null
+                rangeSelectionManager.clearSelection()
+
+                onDateConfigured()
+                updateDisplay()
+                Toast.makeText(this, "Período guardado", Toast.LENGTH_SHORT).show()
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancelar") { dialog, _ ->
+                // CANCELAR: Limpiar completamente y salir del modo de selección
+                pendingEventType = null
+                rangeSelectionManager.clearSelection()
+                updateDisplay()
+                dialog.dismiss()
+            }
+            .setNeutralButton("Atrás") { dialog, _ ->
+                // ATRÁS: NO limpiar pendingEventType, solo limpiar fechas seleccionadas
+                android.util.Log.d("CustodiaApp", "Botón Atrás pulsado - pendingEventType ANTES: $pendingEventType")
+
+                rangeSelectionManager.clearSelection()
+
+                dialog.dismiss()
+
+                // Volver a la pestaña del calendario
+                findViewById<TabLayout>(R.id.tabLayout).getTabAt(0)?.select()
+
+                android.util.Log.d("CustodiaApp", "Botón Atrás - pendingEventType ANTES updateDisplay: $pendingEventType")
+
+                // Forzar actualización del calendario
+                updateDisplay()
+
+                android.util.Log.d("CustodiaApp", "Botón Atrás - pendingEventType DESPUÉS updateDisplay: $pendingEventType")
+
+                // Mostrar toast recordando cómo seleccionar (con delay para que se vea)
+                viewPager.postDelayed({
+                    val message = when (pendingEventType) {
+                        "CHRISTMAS" -> "🎄 Modo activo: Toca FECHA INICIO del rango de Navidad"
+                        "EASTER" -> "🐣 Modo activo: Toca FECHA INICIO del rango de Semana Santa"
+                        "PERIOD" -> "📅 Modo activo: Toca FECHA INICIO del rango"
+                        "SPECIAL_DATE" -> "📅 Modo activo: Toca UNA fecha especial"
+                        else -> "⚠️ ERROR: pendingEventType perdido ($pendingEventType)"
+                    }
+                    Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+                }, 300)
+            }
+            .show()
+    }
+
+    // ============= DIÁLOGOS DE GESTIÓN =============
+
     private fun showSpecialDatesManager() {
+        // Mostrar opciones: añadir o ver lista
+        val options = if (viewModel.specialDates.isEmpty()) {
+            arrayOf("➕ Añadir fecha especial")
+        } else {
+            arrayOf("➕ Añadir fecha especial", "📋 Ver lista (${viewModel.specialDates.size})")
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle("Gestionar Fechas Especiales")
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> {
+                        // Añadir nueva fecha especial
+                        pendingEventType = "SPECIAL_DATE"
+                        rangeSelectionManager.clearSelection()
+                        findViewById<TabLayout>(R.id.tabLayout).getTabAt(0)?.select()
+                        showSelectionToast("📅 Selecciona UNA fecha en el calendario para la fecha especial")
+                    }
+                    1 -> showSpecialDatesList()
+                }
+            }
+            .setNegativeButton("Cerrar", null)
+            .show()
+    }
+
+    private fun showSpecialDateConfigDialog(date: LocalDate) {
+        // Verificar si ya existe un evento en esta fecha
+        val existingSpecialDate = viewModel.specialDates.find { it.date == date }
+        val existingPeriod = viewModel.summerEvents.find { date in it.startDate..it.endDate }
+        val existingNoCustody = viewModel.noCustodyPeriods.find { date in it.startDate..it.endDate }
+
+        if (existingSpecialDate != null || existingPeriod != null || existingNoCustody != null) {
+            val existingDesc = when {
+                existingSpecialDate != null -> "Fecha especial: ${existingSpecialDate.description}"
+                existingPeriod != null -> "Período: ${existingPeriod.description}"
+                existingNoCustody != null -> "Sin custodia: ${existingNoCustody.description}"
+                else -> "Evento existente"
+            }
+
+            AlertDialog.Builder(this)
+                .setTitle("⚠️ Fecha ocupada")
+                .setMessage("Ya existe un evento en esta fecha:\n\n$existingDesc\n\n¿Quieres eliminarlo y crear uno nuevo?")
+                .setPositiveButton("Sí, sobrescribir") { _, _ ->
+                    // Eliminar eventos existentes
+                    existingSpecialDate?.let { viewModel.specialDates.remove(it) }
+                    existingPeriod?.let { viewModel.summerEvents.remove(it) }
+                    existingNoCustody?.let { viewModel.noCustodyPeriods.remove(it) }
+
+                    // Continuar con el diálogo de configuración
+                    showSpecialDateConfigDialogInternal(date)
+                }
+                .setNegativeButton("No, cancelar") { _, _ ->
+                    pendingEventType = null
+                    rangeSelectionManager.clearSelection()
+                    updateDisplay()
+                }
+                .show()
+            return
+        }
+
+        showSpecialDateConfigDialogInternal(date)
+    }
+
+    private fun showSpecialDateConfigDialogInternal(date: LocalDate) {
         val dialogView = layoutInflater.inflate(R.layout.dialog_summer_event, null)
 
         val edtStartDate = dialogView.findViewById<EditText>(R.id.edtSummerStartDate)
@@ -351,56 +730,75 @@ class MainActivity : AppCompatActivity() {
         val edtDesc = dialogView.findViewById<EditText>(R.id.edtSummerDesc)
         val spinnerParent = dialogView.findViewById<Spinner>(R.id.spinnerSummerParent)
 
-        // Ocultar campos de fecha final (solo necesitamos una fecha para fechas especiales)
+        // Ocultar fecha final
         edtEndDate.visibility = View.GONE
-        // Ocultar el TextView "Fecha de fin" (es el tercer TextView del layout)
         val layout = dialogView as LinearLayout
         if (layout.childCount > 2) {
-            layout.getChildAt(2).visibility = View.GONE // TextView "Fecha de fin"
+            layout.getChildAt(2).visibility = View.GONE
         }
+
+        // Pre-rellenar con la fecha seleccionada
+        val formatter = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")
+        edtStartDate.setText(date.format(formatter))
+        edtStartDate.isEnabled = false
 
         val parents = arrayOf(viewModel.parent1Name, viewModel.parent2Name, "Sin custodia")
         val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, parents)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinnerParent.adapter = adapter
 
-        edtStartDate.setOnClickListener {
-            showDatePickerDialog { date -> edtStartDate.setText(date) }
-        }
-
         AlertDialog.Builder(this)
-            .setTitle("Añadir Fecha Especial")
+            .setTitle("Configurar Fecha Especial")
             .setView(dialogView)
             .setPositiveButton("Guardar") { dialog, _ ->
-                val dateStr = edtStartDate.text.toString()
                 val description = edtDesc.text.toString().ifEmpty { "Fecha especial" }
                 val selectedParentIndex = spinnerParent.selectedItemPosition
 
-                if (dateStr.isNotEmpty()) {
-                    try {
-                        val parts = dateStr.split("/")
-                        val date = LocalDate.of(parts[2].toInt(), parts[1].toInt(), parts[0].toInt())
-
-                        val parentType = when (selectedParentIndex) {
-                            0 -> ParentType.PARENT1
-                            1 -> ParentType.PARENT2
-                            2 -> ParentType.NONE
-                            else -> ParentType.PARENT1
-                        }
-
-                        viewModel.specialDates.add(SpecialDate(date, parentType, description))
-                        updateDisplay()
-                        Toast.makeText(this, "Fecha especial guardada", Toast.LENGTH_SHORT).show()
-                    } catch (e: Exception) {
-                        Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
-                    }
-                } else {
-                    Toast.makeText(this, "Por favor completa la fecha", Toast.LENGTH_SHORT).show()
+                val parentType = when (selectedParentIndex) {
+                    0 -> ParentType.PARENT1
+                    1 -> ParentType.PARENT2
+                    2 -> ParentType.NONE
+                    else -> ParentType.PARENT1
                 }
+
+                viewModel.specialDates.add(SpecialDate(date, parentType, description))
+
+                // Limpiar el modo de selección completamente
+                pendingEventType = null
+                rangeSelectionManager.clearSelection()
+
+                updateDisplay()
+                Toast.makeText(this, "Fecha especial guardada", Toast.LENGTH_SHORT).show()
                 dialog.dismiss()
             }
-            .setNegativeButton("Cancelar") { dialog, _ -> dialog.dismiss() }
-            .setNeutralButton("Ver Lista") { _, _ -> showSpecialDatesList() }
+            .setNegativeButton("Cancelar") { dialog, _ ->
+                // CANCELAR: Limpiar completamente y salir del modo de selección
+                pendingEventType = null
+                rangeSelectionManager.clearSelection()
+                updateDisplay()
+                dialog.dismiss()
+            }
+            .setNeutralButton("Atrás") { dialog, _ ->
+                // ATRÁS: NO limpiar pendingEventType, solo limpiar fechas
+                android.util.Log.d("CustodiaApp", "Botón Atrás (Fecha Especial) - pendingEventType ANTES: $pendingEventType")
+
+                rangeSelectionManager.clearSelection()
+
+                dialog.dismiss()
+
+                // Volver a la pestaña del calendario
+                findViewById<TabLayout>(R.id.tabLayout).getTabAt(0)?.select()
+
+                // Forzar actualización del calendario
+                updateDisplay()
+
+                android.util.Log.d("CustodiaApp", "Botón Atrás (Fecha Especial) - pendingEventType DESPUÉS: $pendingEventType")
+
+                // Mostrar toast recordando cómo seleccionar (con delay para que se vea)
+                viewPager.postDelayed({
+                    Toast.makeText(this, "📅 Modo activo: Toca la fecha especial", Toast.LENGTH_LONG).show()
+                }, 300)
+            }
             .show()
     }
 
@@ -478,102 +876,107 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
-    private fun getParentName(parent: ParentType): String = when(parent) {
-        ParentType.PARENT1 -> viewModel.parent1Name
-        ParentType.PARENT2 -> viewModel.parent2Name
-        ParentType.NONE -> "Sin custodia"
-    }
-
-    private fun showDatePickerDialog(onDateSelected: (String) -> Unit) {
-        val calendar = java.util.Calendar.getInstance()
-        DatePickerDialog(this, { _, year, month, day ->
-            onDateSelected("%02d/%02d/%04d".format(day, month + 1, year))
-        }, calendar.get(java.util.Calendar.YEAR),
-            calendar.get(java.util.Calendar.MONTH),
-            calendar.get(java.util.Calendar.DAY_OF_MONTH)).show()
-    }
-
-    private fun showDatePicker() {
-        val calendar = java.util.Calendar.getInstance()
-        edtSearchDate.text.toString().trim().takeIf { it.isNotEmpty() }?.let { dateText ->
-            try {
-                val parts = dateText.split("/")
-                calendar.set(parts[2].toInt(), parts[1].toInt() - 1, parts[0].toInt())
-            } catch (_: Exception) { }
-        }
-
-        DatePickerDialog(this, { _, year, month, day ->
-            edtSearchDate.setText("%02d/%02d/%04d".format(day, month + 1, year))
-        }, calendar.get(java.util.Calendar.YEAR),
-            calendar.get(java.util.Calendar.MONTH),
-            calendar.get(java.util.Calendar.DAY_OF_MONTH)).show()
-    }
-
-    private fun showStartDatePicker() {
-        val calendar = java.util.Calendar.getInstance()
-        edtStartDate.text.toString().trim().takeIf { it.isNotEmpty() }?.let { dateText ->
-            try {
-                val parts = dateText.split("/")
-                calendar.set(parts[2].toInt(), parts[1].toInt() - 1, parts[0].toInt())
-            } catch (_: Exception) { }
-        }
-
-        DatePickerDialog(this, { _, year, month, day ->
-            val selectedDate = "%02d/%02d/%04d".format(day, month + 1, year)
-            edtStartDate.setText(selectedDate)
-
-            // Actualizar inmediatamente
-            try {
-                viewModel.startDate = LocalDate.of(year, month + 1, day)
-                updateDisplay()
-            } catch (e: Exception) {
-                Toast.makeText(this, "Fecha inválida", Toast.LENGTH_SHORT).show()
-            }
-        }, calendar.get(java.util.Calendar.YEAR),
-            calendar.get(java.util.Calendar.MONTH),
-            calendar.get(java.util.Calendar.DAY_OF_MONTH)).show()
-    }
-
-    // ============= GESTIÓN DE NAVIDAD =============
     private fun showChristmasManager() {
-        showPeriodsManager(prefilledDescription = "Navidad")
-    }
-
-    // ============= GESTIÓN DE SEMANA SANTA =============
-    private fun showEasterManager() {
-        val currentYear = LocalDate.now().year
-        val easterDates = mutableListOf<Pair<Int, LocalDate>>()
-
-        // Calcular Semana Santa para año actual y siguiente
-        for (year in currentYear..(currentYear + 1)) {
-            val easterDate = calculateEasterSunday(year)
-            easterDates.add(year to easterDate)
+        // Contar eventos de Navidad existentes
+        val christmasEvents = viewModel.summerEvents.filter {
+            it.description.contains("Navidad", ignoreCase = true)
         }
 
-        // Mostrar diálogo informativo
-        val message = buildString {
-            easterDates.forEach { (year, date) ->
-                val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.getDefault())
-                append("📅 Semana Santa $year:\n")
-                append("   Domingo de Resurrección: ${date.format(formatter)}\n\n")
-            }
-            append("Pulsa 'Configurar' para añadir este período")
+        val parent1Name = viewModel.parent1Name
+        val parent2Name = viewModel.parent2Name
+        val evenYearStarts = if (viewModel.evenYearStartsWith == 1) parent1Name else parent2Name
+        val oddYearStarts = if (viewModel.oddYearStartsWith == 1) parent1Name else parent2Name
+
+        // Crear las opciones con el recordatorio incluido en la primera línea
+        val options = mutableListOf<String>()
+        options.add("➕ Añadir nueva Navidad")
+        if (christmasEvents.isNotEmpty()) {
+            options.add("📋 Ver lista de Navidades (${christmasEvents.size})")
         }
+        options.add("ℹ️  PARES: $evenYearStarts | IMPARES: $oddYearStarts")
 
         AlertDialog.Builder(this)
-            .setTitle("🐣 Información de Semana Santa")
-            .setMessage(message)
-            .setPositiveButton("Configurar Semana Santa") { _, _ ->
-                showPeriodsManager(prefilledDescription = "Semana Santa")
+            .setTitle("🎄 Gestionar Navidad")
+            .setItems(options.toTypedArray()) { _, which ->
+                when (which) {
+                    0 -> {
+                        // Añadir nueva Navidad
+                        pendingEventType = "CHRISTMAS"
+                        rangeSelectionManager.clearSelection()
+                        findViewById<TabLayout>(R.id.tabLayout).getTabAt(0)?.select()
+                        showSelectionToast("🎄 Selecciona el RANGO de Navidad en el calendario")
+                    }
+                    1 -> {
+                        if (christmasEvents.isNotEmpty()) {
+                            showPeriodsList()
+                        } else {
+                            // Si no hay eventos, la opción 1 es el info, no hacer nada
+                        }
+                    }
+                    2 -> {
+                        // Es solo información, no hacer nada o volver a mostrar el diálogo
+                    }
+                }
             }
             .setNegativeButton("Cerrar", null)
             .show()
     }
 
-    /**
-     * Calcula el Domingo de Resurrección usando el algoritmo de Gauss
-     * Fuente: https://es.wikipedia.org/wiki/Computus
-     */
+    private fun showEasterManager() {
+        val currentYear = LocalDate.now().year
+        val easterDates = mutableListOf<Pair<Int, Pair<LocalDate, LocalDate>>>()
+
+        for (year in currentYear..(currentYear + 1)) {
+            val easterSunday = calculateEasterSunday(year)
+            val mondayBeforeEaster = easterSunday.minusDays(6)
+            easterDates.add(year to (mondayBeforeEaster to easterSunday))
+        }
+
+        val parent1Name = viewModel.parent1Name
+        val parent2Name = viewModel.parent2Name
+        val evenYearStarts = if (viewModel.evenYearStartsWith == 1) parent1Name else parent2Name
+        val oddYearStarts = if (viewModel.oddYearStartsWith == 1) parent1Name else parent2Name
+
+        // Contar eventos de Semana Santa existentes
+        val easterEvents = viewModel.summerEvents.filter {
+            it.description.contains("Semana Santa", ignoreCase = true) ||
+                    it.description.contains("Pascua", ignoreCase = true)
+        }
+
+        val message = buildString {
+            easterDates.forEach { (year, dates) ->
+                val (monday, sunday) = dates
+                val formatter = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.getDefault())
+                append("📅 Semana Santa $year:\n")
+                append("   Lunes ${monday.format(formatter)} - Domingo ${sunday.format(formatter)}\n\n")
+            }
+            append("ℹ️ Recuerda:\n")
+            append("• Años PARES: empieza $evenYearStarts\n")
+            append("• Años IMPARES: empieza $oddYearStarts")
+        }
+
+        val builder = AlertDialog.Builder(this)
+            .setTitle("🐣 Información de Semana Santa")
+            .setMessage(message)
+            .setPositiveButton("Añadir Semana Santa") { _, _ ->
+                pendingEventType = "EASTER"
+                rangeSelectionManager.clearSelection()
+                findViewById<TabLayout>(R.id.tabLayout).getTabAt(0)?.select()
+                showSelectionToast("🐣 Selecciona el RANGO de Semana Santa en el calendario")
+            }
+            .setNegativeButton("Cerrar", null)
+
+        // Añadir botón de ver lista si hay eventos
+        if (easterEvents.isNotEmpty()) {
+            builder.setNeutralButton("Ver lista (${easterEvents.size})") { _, _ ->
+                showPeriodsList()
+            }
+        }
+
+        builder.show()
+    }
+
+
     private fun calculateEasterSunday(year: Int): LocalDate {
         val a = year % 19
         val b = year / 100
@@ -593,83 +996,322 @@ class MainActivity : AppCompatActivity() {
         return LocalDate.of(year, month, day)
     }
 
-    // ============= GESTIÓN DE PERÍODOS (MODIFICADA PARA SOPORTAR PRE-RELLENO) =============
     private fun showPeriodsManager(prefilledDescription: String = "") {
-        val dialogView = layoutInflater.inflate(R.layout.dialog_summer_event, null)
+        // Contar todos los períodos
+        val totalPeriods = viewModel.noCustodyPeriods.size + viewModel.summerEvents.size
 
-        val edtStartDate = dialogView.findViewById<EditText>(R.id.edtSummerStartDate)
-        val edtEndDate = dialogView.findViewById<EditText>(R.id.edtSummerEndDate)
-        val edtDesc = dialogView.findViewById<EditText>(R.id.edtSummerDesc)
-        val spinnerParent = dialogView.findViewById<Spinner>(R.id.spinnerSummerParent)
-
-        // Pre-rellenar descripción si se proporciona
-        if (prefilledDescription.isNotEmpty()) {
-            edtDesc.setText(prefilledDescription)
-        }
-
-        val parents = arrayOf(viewModel.parent1Name, viewModel.parent2Name, "Sin custodia")
-        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, parents)
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        spinnerParent.adapter = adapter
-
-        edtStartDate.setOnClickListener {
-            showDatePickerDialog { date -> edtStartDate.setText(date) }
-        }
-
-        edtEndDate.setOnClickListener {
-            showDatePickerDialog { date -> edtEndDate.setText(date) }
-        }
-
-        val title = when (prefilledDescription) {
-            "Navidad" -> "🎄 Añadir Período de Navidad"
-            "Semana Santa" -> "🐣 Añadir Período de Semana Santa"
-            else -> "Añadir Período Especial"
+        // Mostrar opciones: añadir o ver lista
+        val options = if (totalPeriods == 0) {
+            arrayOf("➕ Añadir período especial")
+        } else {
+            arrayOf("➕ Añadir período especial", "📋 Ver lista ($totalPeriods)")
         }
 
         AlertDialog.Builder(this)
-            .setTitle(title)
-            .setView(dialogView)
-            .setPositiveButton("Guardar") { dialog, _ ->
-                val startDateStr = edtStartDate.text.toString()
-                val endDateStr = edtEndDate.text.toString()
-                val description = edtDesc.text.toString().ifEmpty {
-                    if (prefilledDescription.isNotEmpty()) prefilledDescription else "Período especial"
-                }
-                val selectedParentIndex = spinnerParent.selectedItemPosition
-
-                if (startDateStr.isNotEmpty() && endDateStr.isNotEmpty()) {
-                    try {
-                        val startParts = startDateStr.split("/")
-                        val startDate = LocalDate.of(startParts[2].toInt(), startParts[1].toInt(), startParts[0].toInt())
-
-                        val endParts = endDateStr.split("/")
-                        val endDate = LocalDate.of(endParts[2].toInt(), endParts[1].toInt(), endParts[0].toInt())
-
-                        val parentType = when (selectedParentIndex) {
-                            0 -> ParentType.PARENT1
-                            1 -> ParentType.PARENT2
-                            2 -> ParentType.NONE
-                            else -> ParentType.NONE
-                        }
-
-                        if (parentType == ParentType.NONE) {
-                            viewModel.noCustodyPeriods.add(NoCustodyPeriod(startDate, endDate, description))
+            .setTitle("Gestionar Períodos Especiales")
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> {
+                        // Añadir nuevo período
+                        pendingEventType = "PERIOD"
+                        rangeSelectionManager.clearSelection()
+                        findViewById<TabLayout>(R.id.tabLayout).getTabAt(0)?.select()
+                        val message = if (prefilledDescription == "Navidad") {
+                            "🎄 Selecciona el RANGO en el calendario"
                         } else {
-                            viewModel.summerEvents.add(SummerEvent(startDate, endDate, parentType, description))
+                            "📅 Selecciona el RANGO en el calendario para el período especial"
                         }
-
-                        updateDisplay()
-                        Toast.makeText(this, "Período guardado correctamente", Toast.LENGTH_SHORT).show()
-                    } catch (e: Exception) {
-                        Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                        showSelectionToast(message)
                     }
-                } else {
-                    Toast.makeText(this, "Por favor completa las fechas", Toast.LENGTH_SHORT).show()
+                    1 -> showPeriodsList()
                 }
-                dialog.dismiss()
             }
-            .setNegativeButton("Cancelar") { dialog, _ -> dialog.dismiss() }
-            .setNeutralButton("Ver Lista") { _, _ -> showPeriodsList() }
+            .setNegativeButton("Cerrar", null)
+            .show()
+    }
+
+    private fun showDeleteAllConfirmation() {
+        val options = arrayOf(
+            "🗑️ Borrar TODO (eventos + nombres)",
+            "📅 Borrar solo eventos (mantener nombres)"
+        )
+
+        AlertDialog.Builder(this)
+            .setTitle("⚠️ Opciones de borrado")
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> confirmDeleteAll()
+                    1 -> confirmDeleteEventsOnly()
+                }
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+
+    private fun confirmDeleteAll() {
+        AlertDialog.Builder(this)
+            .setTitle("⚠️ Borrar TODO")
+            .setMessage("Se eliminarán:\n\n• Fechas especiales\n• Períodos especiales\n• Navidad y Semana Santa\n• Períodos sin custodia\n• Cambios de patrón\n• Nombres de custodios\n\nEsta acción NO se puede deshacer.")
+            .setPositiveButton("Sí, borrar todo") { _, _ ->
+                viewModel.specialDates.clear()
+                viewModel.summerEvents.clear()
+                viewModel.noCustodyPeriods.clear()
+                viewModel.patternChanges.clear()
+
+                viewModel.parent1Name = "Custodio 1"
+                viewModel.parent2Name = "Custodio 2"
+                edtParent1.setText(viewModel.parent1Name)
+                edtParent2.setText(viewModel.parent2Name)
+
+                setupDynamicParentSpinners()
+                preferencesManager.saveConfiguration(viewModel)
+                updateDisplay()
+                Toast.makeText(this, "✅ Todo eliminado", Toast.LENGTH_LONG).show()
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+
+    private fun confirmDeleteEventsOnly() {
+        AlertDialog.Builder(this)
+            .setTitle("📅 Borrar solo eventos")
+            .setMessage("Se eliminarán:\n\n• Fechas especiales\n• Períodos especiales\n• Navidad y Semana Santa\n• Períodos sin custodia\n• Cambios de patrón\n\nSe mantendrán:\n• Nombres de custodios\n• Configuración base del patrón\n\nEsta acción NO se puede deshacer.")
+            .setPositiveButton("Sí, borrar eventos") { _, _ ->
+                viewModel.specialDates.clear()
+                viewModel.summerEvents.clear()
+                viewModel.noCustodyPeriods.clear()
+                viewModel.patternChanges.clear()
+
+                preferencesManager.saveConfiguration(viewModel)
+                updateDisplay()
+                Toast.makeText(this, "✅ Eventos eliminados", Toast.LENGTH_LONG).show()
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+
+    // ============= GESTIÓN DE CAMBIOS DE PATRÓN =============
+
+    data class PatternChange(
+        val startDate: LocalDate,
+        val pattern: CustodyPattern,
+        val changeDayOfWeek: Int,
+        val startsWithParent: Int,
+        val description: String = ""
+    )
+
+    private fun showPatternChangesManager() {
+        val totalChanges = viewModel.patternChanges.size
+
+        if (totalChanges == 0) {
+            // Si no hay cambios, ir directo a añadir
+            AlertDialog.Builder(this)
+                .setTitle("Gestionar Cambios de Patrón")
+                .setMessage("Aquí puedes añadir múltiples cambios de patrón a lo largo del tiempo por acuerdos o modificaciones judiciales.")
+                .setPositiveButton("➕ Añadir cambio") { _, _ ->
+                    showAddPatternChangeDialog()
+                }
+                .setNegativeButton("Cerrar", null)
+                .show()
+        } else {
+            // Si hay cambios, mostrar opciones
+            val options = arrayOf(
+                "➕ Añadir cambio de patrón",
+                "📋 Ver lista de cambios ($totalChanges)"
+            )
+
+            AlertDialog.Builder(this)
+                .setTitle("Gestionar Cambios de Patrón")
+                .setItems(options) { _, which ->
+                    when (which) {
+                        0 -> showAddPatternChangeDialog()
+                        1 -> showPatternChangesList()
+                    }
+                }
+                .setNegativeButton("Cerrar", null)
+                .show()
+        }
+    }
+
+    private fun showAddPatternChangeDialog() {
+        // Si no existe el layout, crearlo dinámicamente
+        val scrollView = ScrollView(this)
+        val linearLayout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(50, 40, 50, 40)
+        }
+
+        // Fecha de inicio
+        val tvDateLabel = TextView(this).apply {
+            text = "Fecha desde cuando aplica:"
+            textSize = 16f
+            setPadding(0, 0, 0, 10)
+        }
+        linearLayout.addView(tvDateLabel)
+
+        val edtDate = EditText(this).apply {
+            hint = "dd/MM/yyyy"
+            setText(LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")))
+            isFocusable = false
+            setOnClickListener {
+                val calendar = java.util.Calendar.getInstance()
+                DatePickerDialog(this@MainActivity, { _, year, month, day ->
+                    setText("%02d/%02d/%04d".format(day, month + 1, year))
+                }, calendar.get(java.util.Calendar.YEAR),
+                    calendar.get(java.util.Calendar.MONTH),
+                    calendar.get(java.util.Calendar.DAY_OF_MONTH)).show()
+            }
+        }
+        linearLayout.addView(edtDate)
+
+        // Patrón
+        val tvPatternLabel = TextView(this).apply {
+            text = "Patrón de custodia:"
+            textSize = 16f
+            setPadding(0, 30, 0, 10)
+        }
+        linearLayout.addView(tvPatternLabel)
+
+        val spinnerPattern = Spinner(this).apply {
+            adapter = ArrayAdapter.createFromResource(
+                this@MainActivity, R.array.custody_patterns, android.R.layout.simple_spinner_item
+            ).apply {
+                setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            }
+        }
+        linearLayout.addView(spinnerPattern)
+
+        // Día de cambio
+        val tvDayLabel = TextView(this).apply {
+            text = "Día de cambio:"
+            textSize = 16f
+            setPadding(0, 30, 0, 10)
+        }
+        linearLayout.addView(tvDayLabel)
+
+        val spinnerDay = Spinner(this).apply {
+            adapter = ArrayAdapter.createFromResource(
+                this@MainActivity, R.array.days_of_week, android.R.layout.simple_spinner_item
+            ).apply {
+                setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            }
+            setSelection(0) // Lunes por defecto
+        }
+        linearLayout.addView(spinnerDay)
+
+        // Quién empieza
+        val tvStartsLabel = TextView(this).apply {
+            text = "Empieza con:"
+            textSize = 16f
+            setPadding(0, 30, 0, 10)
+        }
+        linearLayout.addView(tvStartsLabel)
+
+        val spinnerStarts = Spinner(this).apply {
+            adapter = ArrayAdapter(
+                this@MainActivity,
+                android.R.layout.simple_spinner_item,
+                arrayOf(viewModel.parent1Name, viewModel.parent2Name)
+            ).apply {
+                setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            }
+        }
+        linearLayout.addView(spinnerStarts)
+
+        // Descripción opcional
+        val tvDescLabel = TextView(this).apply {
+            text = "Descripción (opcional):"
+            textSize = 16f
+            setPadding(0, 30, 0, 10)
+        }
+        linearLayout.addView(tvDescLabel)
+
+        val edtDesc = EditText(this).apply {
+            hint = "Ej: Acuerdo judicial febrero 2025"
+            setSingleLine(false)
+            maxLines = 3
+        }
+        linearLayout.addView(edtDesc)
+
+        scrollView.addView(linearLayout)
+
+        AlertDialog.Builder(this)
+            .setTitle("➕ Añadir Cambio de Patrón")
+            .setView(scrollView)
+            .setPositiveButton("Guardar") { dialog, _ ->
+                try {
+                    val dateStr = edtDate.text.toString()
+                    val parts = dateStr.split("/")
+                    val date = LocalDate.of(parts[2].toInt(), parts[1].toInt(), parts[0].toInt())
+
+                    val pattern = when(spinnerPattern.selectedItemPosition) {
+                        0 -> AlternateWeeks(startWithParent = if (spinnerStarts.selectedItemPosition == 0) 1 else 2)
+                        1 -> AlternateDays(startWithParent = if (spinnerStarts.selectedItemPosition == 0) 1 else 2)
+                        2 -> WeekdaysWeekends(
+                            weekdaysParent = if (spinnerStarts.selectedItemPosition == 0) 1 else 2,
+                            weekendsParent = if (spinnerStarts.selectedItemPosition == 0) 2 else 1
+                        )
+                        else -> AlternateWeeks(startWithParent = 1)
+                    }
+
+                    val change = PatternChange(
+                        startDate = date,
+                        pattern = pattern,
+                        changeDayOfWeek = spinnerDay.selectedItemPosition + 1,
+                        startsWithParent = if (spinnerStarts.selectedItemPosition == 0) 1 else 2,
+                        description = edtDesc.text.toString().ifEmpty { "Cambio de patrón" }
+                    )
+
+                    viewModel.patternChanges.add(change)
+                    viewModel.patternChanges.sortBy { it.startDate }
+
+                    updateDisplay()
+                    Toast.makeText(this, "Cambio de patrón guardado", Toast.LENGTH_SHORT).show()
+                    dialog.dismiss()
+                } catch (e: Exception) {
+                    Toast.makeText(this, "Error: Fecha inválida", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+
+    private fun showPatternChangesList() {
+        if (viewModel.patternChanges.isEmpty()) {
+            Toast.makeText(this, "No hay cambios de patrón registrados", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val items = viewModel.patternChanges.map { change ->
+            val patternName = when(change.pattern) {
+                is AlternateWeeks -> "Semanas alternas"
+                is AlternateDays -> "Días alternos"
+                is WeekdaysWeekends -> "Entre semana/Fines de semana"
+                else -> "Personalizado"
+            }
+            val dayNames = arrayOf("Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb")
+            val dayName = dayNames[change.changeDayOfWeek % 7]
+            val startsName = if (change.startsWithParent == 1) viewModel.parent1Name else viewModel.parent2Name
+
+            "${change.startDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))} - $patternName (cambio: $dayName, empieza: $startsName)\n${change.description}"
+        }.toTypedArray()
+
+        AlertDialog.Builder(this)
+            .setTitle("Cambios de Patrón (${viewModel.patternChanges.size})")
+            .setItems(items) { _, which ->
+                val change = viewModel.patternChanges[which]
+                AlertDialog.Builder(this)
+                    .setTitle("¿Eliminar cambio de patrón?")
+                    .setMessage("${change.startDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}\n${change.description}")
+                    .setPositiveButton("Eliminar") { _, _ ->
+                        viewModel.patternChanges.removeAt(which)
+                        updateDisplay()
+                        Toast.makeText(this, "Cambio eliminado", Toast.LENGTH_SHORT).show()
+                    }
+                    .setNegativeButton("Cancelar", null)
+                    .show()
+            }
+            .setPositiveButton("Cerrar", null)
             .show()
     }
 
@@ -706,28 +1348,46 @@ class MainActivity : AppCompatActivity() {
 
         private fun getVacationCustody(date: LocalDate): CustodyInfo? {
             val year = date.year
+
+            // VERANO: Se asigna automáticamente según años pares/impares
             val summerRange = LocalDate.of(year, 7, 1)..LocalDate.of(year, 8, 31)
             if (date in summerRange) {
-                return getVacationInfo(date, summerRange, viewModel.summerDivision,
-                    viewModel.summerFirstParent, viewModel.summerYearRule, year, "Verano")
+                val isEvenYear = year % 2 == 0
+                val summerFirstParent = if (isEvenYear) {
+                    if (viewModel.evenYearStartsWith == 1) ParentType.PARENT1 else ParentType.PARENT2
+                } else {
+                    if (viewModel.oddYearStartsWith == 1) ParentType.PARENT1 else ParentType.PARENT2
+                }
+
+                return getVacationInfo(
+                    date,
+                    summerRange,
+                    viewModel.summerDivision,
+                    summerFirstParent,
+                    YearRule.ALWAYS,
+                    year,
+                    "Verano"
+                )
             }
 
-            if (date in viewModel.christmasPeriod1Start..viewModel.christmasPeriod1End) {
-                val parent = getChristmasParent(year, viewModel.christmasPeriod1FirstParent,
-                    viewModel.christmasPeriod1YearRule)
-                return CustodyInfo(parent, getParentName(parent), "Navidad (1ª parte)", true)
+            // NAVIDAD Y SEMANA SANTA: Solo si están configurados manualmente
+            val christmasEvents = viewModel.summerEvents.filter {
+                it.description.contains("Navidad", ignoreCase = true)
+            }
+            christmasEvents.forEach { event ->
+                if (date in event.startDate..event.endDate) {
+                    return CustodyInfo(event.parent, getParentName(event.parent), event.description, true)
+                }
             }
 
-            if (date in viewModel.christmasPeriod2Start..viewModel.christmasPeriod2End) {
-                val parent = getChristmasParent(year, viewModel.christmasPeriod2FirstParent,
-                    viewModel.christmasPeriod2YearRule)
-                return CustodyInfo(parent, getParentName(parent), "Navidad (2ª parte)", true)
+            val easterEvents = viewModel.summerEvents.filter {
+                it.description.contains("Semana Santa", ignoreCase = true) ||
+                        it.description.contains("Pascua", ignoreCase = true)
             }
-
-            if (!viewModel.easterDisabled && date in viewModel.easterStart..viewModel.easterEnd) {
-                return getVacationInfo(date, viewModel.easterStart..viewModel.easterEnd,
-                    viewModel.easterDivision, viewModel.easterFirstParent,
-                    viewModel.easterYearRule, year, "Semana Santa")
+            easterEvents.forEach { event ->
+                if (date in event.startDate..event.endDate) {
+                    return CustodyInfo(event.parent, getParentName(event.parent), event.description, true)
+                }
             }
 
             return null
@@ -740,33 +1400,112 @@ class MainActivity : AppCompatActivity() {
             date, range.start, range.endInclusive, division, firstParent, yearRule, year
         )?.let { CustodyInfo(it, getParentName(it), label, true) }
 
-        private fun getChristmasParent(year: Int, firstParent: ParentType, yearRule: YearRule): ParentType {
-            val isEvenYear = year % 2 == 0
-            return when {
-                yearRule == YearRule.ALWAYS -> firstParent
-                (yearRule == YearRule.EVEN) == isEvenYear -> firstParent
-                else -> firstParent.toggle()
-            }
-        }
-
         private fun getRegularCustody(date: LocalDate): CustodyInfo {
+            // Buscar el cambio de patrón aplicable
+            val applicableChange = viewModel.patternChanges
+                .filter { it.startDate <= date }
+                .maxByOrNull { it.startDate }
+
+            // 🔍 DEBUG
+            android.util.Log.d("CUSTODY_DEBUG", "=== CAMBIOS TOTALES: ${viewModel.patternChanges.size}")
+            viewModel.patternChanges.forEach {
+                android.util.Log.d("CUSTODY_DEBUG", "Cambio: ${it.startDate} - ${it.description}")
+            }
+            android.util.Log.d("CUSTODY_DEBUG", "Cambio aplicable para $date: $applicableChange")
+
+           if (applicableChange != null) {
+                // HAY CAMBIO - usar sus parámetros
+                val effectivePattern = when (applicableChange.pattern) {
+                    is AlternateWeeks -> (applicableChange.pattern as AlternateWeeks).copy(
+                        startWithParent = applicableChange.startsWithParent
+                    )
+                    is AlternateDays -> (applicableChange.pattern as AlternateDays).copy(
+                        startWithParent = applicableChange.startsWithParent
+                    )
+                    else -> applicableChange.pattern
+                }
+
+                // Usar la fecha del cambio como inicio
+                val parent = effectivePattern.getParentForDate(
+                    date,
+                    applicableChange.startDate,
+                    applicableChange.changeDayOfWeek
+                )
+
+                return CustodyInfo(
+                    if (parent == 1) ParentType.PARENT1 else ParentType.PARENT2,
+                    if (parent == 1) viewModel.parent1Name else viewModel.parent2Name,
+                    "", false
+                )
+            }
+
+            // NO HAY CAMBIOS - configuración base
             val year = date.year
-            val yearStartParent = if (year % 2 == 0) viewModel.evenYearStartsWith else viewModel.oddYearStartsWith
-            val navEnd = viewModel.christmasPeriod2End
-            val effectiveNavEnd = if (navEnd.year < year)
-                LocalDate.of(year, navEnd.monthValue, navEnd.dayOfMonth) else navEnd
+            val configuredStartDate = viewModel.startDate
+            val changeDayOfWeek = viewModel.changeDayOfWeek
+            val patternStartsWithParent = viewModel.patternStartsWithParent
+            val applicationMode = viewModel.patternApplicationMode
 
-            var firstMonday = effectiveNavEnd.plusDays(1)
-            while (firstMonday.dayOfWeek.value != 1) firstMonday = firstMonday.plusDays(1)
+            val effectiveStartDate: LocalDate = when (applicationMode) {
+                "FORWARD" -> {
+                    val configuredYear = configuredStartDate.year
+                    var changeDayInWeek = configuredStartDate
 
-            val startDate = if (date.isBefore(firstMonday)) effectiveNavEnd.plusDays(1) else firstMonday
+                    if (configuredStartDate.dayOfWeek.value != changeDayOfWeek) {
+                        while (changeDayInWeek.dayOfWeek.value != changeDayOfWeek) {
+                            changeDayInWeek = changeDayInWeek.minusDays(1)
+                        }
+                    }
+
+                    if (date.year >= configuredYear) {
+                        changeDayInWeek
+                    } else {
+                        var firstChangeDay = LocalDate.of(date.year, 1, 1)
+                        while (firstChangeDay.dayOfWeek.value != changeDayOfWeek) {
+                            firstChangeDay = firstChangeDay.plusDays(1)
+                        }
+                        firstChangeDay
+                    }
+                }
+                "FROM_DATE" -> {
+                    var changeDayInWeek = configuredStartDate
+
+                    if (configuredStartDate.dayOfWeek.value == changeDayOfWeek) {
+                        changeDayInWeek = configuredStartDate
+                    } else {
+                        while (changeDayInWeek.dayOfWeek.value != changeDayOfWeek) {
+                            changeDayInWeek = changeDayInWeek.minusDays(1)
+                        }
+                    }
+
+                    if (date.isBefore(changeDayInWeek)) {
+                        var firstChangeDay = LocalDate.of(year, 1, 1)
+                        while (firstChangeDay.dayOfWeek.value != changeDayOfWeek) {
+                            firstChangeDay = firstChangeDay.plusDays(1)
+                        }
+                        firstChangeDay
+                    } else {
+                        changeDayInWeek
+                    }
+                }
+                else -> {
+                    var changeDayInWeek = configuredStartDate
+                    if (configuredStartDate.dayOfWeek.value != changeDayOfWeek) {
+                        while (changeDayInWeek.dayOfWeek.value != changeDayOfWeek) {
+                            changeDayInWeek = changeDayInWeek.minusDays(1)
+                        }
+                    }
+                    changeDayInWeek
+                }
+            }
+
             val pattern = when (val p = viewModel.custodyPattern) {
-                is AlternateWeeks -> p.copy(startWithParent = yearStartParent)
-                is AlternateDays -> p.copy(startWithParent = yearStartParent)
+                is AlternateWeeks -> p.copy(startWithParent = patternStartsWithParent)
+                is AlternateDays -> p.copy(startWithParent = patternStartsWithParent)
                 else -> p
             }
 
-            val parent = pattern.getParentForDate(date, startDate)
+            val parent = pattern.getParentForDate(date, effectiveStartDate, changeDayOfWeek)
             return CustodyInfo(
                 if (parent == 1) ParentType.PARENT1 else ParentType.PARENT2,
                 if (parent == 1) viewModel.parent1Name else viewModel.parent2Name,
@@ -800,39 +1539,30 @@ class MainActivity : AppCompatActivity() {
                 }
                 VacationDivision.FULL -> effectiveFirst
                 VacationDivision.ALTERNATE_DAYS -> {
-                    // Alternar cada 7 días completos desde el día de inicio
                     if (days / 7 % 2 == 0L) effectiveFirst else effectiveFirst.toggle()
                 }
                 VacationDivision.ALTERNATE_WEEKS -> {
-                    // Alternar por semanas naturales (lunes a domingo)
-                    // Calcular en qué semana natural está la fecha
-                    val startDayOfWeek = startDate.dayOfWeek.value // 1=Lun, 7=Dom
-
-                    // Días hasta el primer domingo desde startDate
+                    val startDayOfWeek = startDate.dayOfWeek.value
                     val daysToFirstSunday = 7 - startDayOfWeek
 
-                    // Si estamos en la semana parcial inicial
                     if (days <= daysToFirstSunday) {
                         return effectiveFirst
                     }
 
-                    // Calcular número de semana completa después de la primera parcial
                     val daysAfterFirstWeek = days - daysToFirstSunday - 1
                     val weekNumber = daysAfterFirstWeek / 7
 
-                    // Alternar: semana parcial inicial + semanas pares = primer custodio
                     if (weekNumber % 2 == 0L) effectiveFirst.toggle() else effectiveFirst
                 }
                 VacationDivision.BIWEEKLY -> {
-                    // Para verano: dividir por quincenas (1-15 y 16-31)
                     val dayOfMonth = date.dayOfMonth
                     val month = date.monthValue
 
                     val quincena = when {
-                        month == 7 && dayOfMonth <= 15 -> 0  // 1-15 julio
-                        month == 7 && dayOfMonth >= 16 -> 1  // 16-31 julio
-                        month == 8 && dayOfMonth <= 15 -> 2  // 1-15 agosto
-                        month == 8 && dayOfMonth >= 16 -> 3  // 16-31 agosto
+                        month == 7 && dayOfMonth <= 15 -> 0
+                        month == 7 && dayOfMonth >= 16 -> 1
+                        month == 8 && dayOfMonth <= 15 -> 2
+                        month == 8 && dayOfMonth >= 16 -> 3
                         else -> 0
                     }
 
@@ -882,5 +1612,61 @@ class MainActivity : AppCompatActivity() {
                 append("Diferencia entre padres: ${kotlin.math.abs(p1Days - p2Days)} días")
             }
         }
+    }
+    // dialogo de personalizar //
+    private fun showCustomPatternDialog() {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_custom_pattern, null)
+
+        val edtDaysParent1 = dialogView.findViewById<EditText>(R.id.edtDaysParent1)
+        val edtDaysParent2 = dialogView.findViewById<EditText>(R.id.edtDaysParent2)
+        val spinnerStarts = dialogView.findViewById<Spinner>(R.id.spinnerStartsWith)
+
+        // Configurar spinner con los nombres de los padres
+        val parents = arrayOf(viewModel.parent1Name, viewModel.parent2Name)
+        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, parents)
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinnerStarts.adapter = adapter
+
+        // Si ya hay un patrón personalizado, cargar sus valores
+        if (viewModel.custodyPattern is CustomDaysPattern) {
+            val current = viewModel.custodyPattern as CustomDaysPattern
+            edtDaysParent1.setText(current.daysForParent1.toString())
+            edtDaysParent2.setText(current.daysForParent2.toString())
+            spinnerStarts.setSelection(if (current.startWithParent == 1) 0 else 1)
+        } else {
+            edtDaysParent1.setText("7")
+            edtDaysParent2.setText("7")
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle("Patrón Personalizado")
+            .setView(dialogView)
+            .setPositiveButton("Guardar") { dialog, _ ->
+                val days1 = edtDaysParent1.text.toString().toIntOrNull() ?: 7
+                val days2 = edtDaysParent2.text.toString().toIntOrNull() ?: 7
+                val startWith = if (spinnerStarts.selectedItemPosition == 0) 1 else 2
+
+                if (days1 > 0 && days2 > 0) {
+                    viewModel.custodyPattern = CustomDaysPattern(
+                        daysForParent1 = days1,
+                        daysForParent2 = days2,
+                        startWithParent = startWith
+                    )
+                    updateDisplay()
+                    Toast.makeText(this, "Patrón personalizado configurado: $days1 días / $days2 días", Toast.LENGTH_LONG).show()
+                } else {
+                    Toast.makeText(this, "Los días deben ser mayores a 0", Toast.LENGTH_SHORT).show()
+                }
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancelar") { dialog, _ ->
+                // Si cancela y no había patrón personalizado previo, volver a Semanas Alternas
+                if (viewModel.custodyPattern !is CustomDaysPattern) {
+                    findViewById<Spinner>(R.id.spinnerPattern).setSelection(0)
+                    viewModel.custodyPattern = AlternateWeeks(startWithParent = 1)
+                }
+                dialog.dismiss()
+            }
+            .show()
     }
 }

@@ -71,6 +71,7 @@
                 </LinearLayout>
 
                 <!-- TAB 2: CONSULTAR -->
+                <!-- TAB 2: CONSULTAR -->
                 <ScrollView
                     android:id="@+id/tabSearch"
                     android:layout_width="match_parent"
@@ -103,28 +104,13 @@
                                     android:textColor="?attr/colorPrimary"
                                     android:layout_marginBottom="12dp"/>
 
-                                <com.google.android.material.textfield.TextInputLayout
+                                <DatePicker
+                                    android:id="@+id/datePickerSearch"
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
-                                    android:hint="Selecciona una fecha"
-                                    app:boxBackgroundMode="outline"
-                                    app:boxCornerRadiusTopStart="8dp"
-                                    app:boxCornerRadiusTopEnd="8dp"
-                                    app:boxCornerRadiusBottomStart="8dp"
-                                    app:boxCornerRadiusBottomEnd="8dp"
-                                    app:startIconDrawable="@android:drawable/ic_menu_my_calendar"
-                                    android:layout_marginBottom="16dp">
-
-                                    <com.google.android.material.textfield.TextInputEditText
-                                        android:id="@+id/edtSearchDate"
-                                        android:layout_width="match_parent"
-                                        android:layout_height="wrap_content"
-                                        android:focusable="false"
-                                        android:clickable="true"
-                                        android:cursorVisible="false"
-                                        android:hint="dd/MM/yyyy"
-                                        android:maxLines="1"/>
-                                </com.google.android.material.textfield.TextInputLayout>
+                                    android:datePickerMode="spinner"
+                                    android:calendarViewShown="false"
+                                    android:layout_marginBottom="16dp"/>
 
                                 <com.google.android.material.button.MaterialButton
                                     android:id="@+id/btnSearch"
@@ -298,6 +284,14 @@
                                     android:textSize="18sp"
                                     android:textStyle="bold"
                                     android:textColor="?attr/colorPrimary"
+                                    android:layout_marginBottom="8dp"/>
+
+                                <TextView
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:text="Esta configuración afecta automáticamente al verano (julio-agosto). Navidad y Semana Santa se configuran manualmente."
+                                    android:textSize="12sp"
+                                    android:textColor="#999999"
                                     android:layout_marginBottom="12dp"/>
 
                                 <TextView
@@ -390,6 +384,50 @@
                                 <TextView
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
+                                    android:text="Quién empieza en la fecha de inicio:"
+                                    android:textSize="14sp"
+                                    android:textColor="#666666"
+                                    android:layout_marginBottom="4dp"/>
+
+                                <Spinner
+                                    android:id="@+id/spinnerPatternStartsWith"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="50dp"
+                                    android:background="@android:drawable/btn_dropdown"
+                                    android:padding="12dp"
+                                    android:layout_marginBottom="16dp"/>
+
+                                <TextView
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:text="Modo de aplicación:"
+                                    android:textSize="14sp"
+                                    android:textColor="#666666"
+                                    android:layout_marginBottom="8dp"/>
+
+                                <RadioGroup
+                                    android:id="@+id/radioGroupApplicationMode"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginBottom="16dp">
+
+                                    <RadioButton
+                                        android:id="@+id/radioModeForward"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:text="Desde enero del año actual hacia adelante"
+                                        android:checked="true"/>
+
+                                    <RadioButton
+                                        android:id="@+id/radioModeFromDate"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:text="Cambiar desde la fecha marcada (resto año + venideros)"/>
+                                </RadioGroup>
+
+                                <TextView
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
                                     android:text="@string/label_custody_pattern"
                                     android:textSize="14sp"
                                     android:textColor="#666666"
@@ -432,54 +470,6 @@
                                     android:layout_width="match_parent"
                                     android:layout_height="50dp"
                                     android:background="@android:drawable/btn_dropdown"
-                                    android:padding="12dp"
-                                    android:layout_marginBottom="16dp"/>
-
-                                <TextView
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:text="Quién empieza el VERANO:"
-                                    android:textSize="14sp"
-                                    android:textColor="#666666"
-                                    android:layout_marginBottom="4dp"/>
-
-                                <Spinner
-                                    android:id="@+id/spinnerSummerFirst"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="50dp"
-                                    android:background="@android:drawable/btn_dropdown"
-                                    android:padding="12dp"
-                                    android:layout_marginBottom="16dp"/>
-
-                                <TextView
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:text="Regla de años para VERANO:"
-                                    android:textSize="14sp"
-                                    android:textColor="#666666"
-                                    android:layout_marginBottom="4dp"/>
-
-                                <Spinner
-                                    android:id="@+id/spinnerSummerYearRule"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="50dp"
-                                    android:background="@android:drawable/btn_dropdown"
-                                    android:padding="12dp"
-                                    android:layout_marginBottom="16dp"/>
-
-                                <TextView
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:text="@string/label_christmas_division"
-                                    android:textSize="14sp"
-                                    android:textColor="#666666"
-                                    android:layout_marginBottom="4dp"/>
-
-                                <Spinner
-                                    android:id="@+id/spinnerChristmasDiv"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="50dp"
-                                    android:background="@android:drawable/btn_dropdown"
                                     android:padding="12dp"/>
                             </LinearLayout>
                         </com.google.android.material.card.MaterialCardView>
@@ -517,6 +507,15 @@
                                     android:layout_marginBottom="8dp"/>
 
                                 <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/btnManagePatternChanges"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:text="🔄 Gestionar Cambios de Patrón"
+                                    app:cornerRadius="8dp"
+                                    style="@style/Widget.Material3.Button.OutlinedButton"
+                                    android:layout_marginBottom="8dp"/>
+
+                                <com.google.android.material.button.MaterialButton
                                     android:id="@+id/btnManageNoCustody"
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
@@ -543,6 +542,19 @@
                                     style="@style/Widget.Material3.Button.OutlinedButton"/>
                             </LinearLayout>
                         </com.google.android.material.card.MaterialCardView>
+
+                        <!-- Botón borrar todo -->
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnDeleteAll"
+                            android:layout_width="match_parent"
+                            android:layout_height="60dp"
+                            android:text="🗑️ Borrar"
+                            android:textSize="16sp"
+                            app:cornerRadius="8dp"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
+                            app:strokeColor="#B00020"
+                            android:textColor="#B00020"
+                            android:layout_marginBottom="16dp"/>
 
                         <!-- Botón guardar -->
                         <com.google.android.material.button.MaterialButton

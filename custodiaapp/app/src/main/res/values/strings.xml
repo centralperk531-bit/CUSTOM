@@ -5,8 +5,8 @@
     <!-- Tabs -->
     <string name="tab_calendar">Calendario</string>
     <string name="tab_search">Consultar</string>
-    <string name="tab_stats">Estadísticas</string>
-    <string name="tab_config">Configuración</string>
+    <string name="tab_stats">Stats</string>
+    <string name="tab_config">Config</string>
 
     <!-- Labels -->
     <string name="label_parent1">Custodio 1</string>

@@ -1,10 +1,16 @@
 package com.example.custodiaapp
 
+import android.graphics.Color
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.method.LinkMovementMethod
+import android.text.style.ClickableSpan
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.TextStyle
 import java.util.Locale
@@ -15,8 +21,8 @@ class CalendarPagerAdapter(
     private val viewModel: CustodyViewModel
 ) : RecyclerView.Adapter<CalendarPagerAdapter.CalendarViewHolder>() {
 
-    private val startMonth = YearMonth.now().minusMonths(120) // 10 años atrás
-    private val endMonth = YearMonth.now().plusMonths(120) // 10 años adelante
+    private val startMonth = YearMonth.now().minusMonths(120)
+    private val endMonth = YearMonth.now().plusMonths(120)
 
     class CalendarViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val monthTitle: TextView = view.findViewById(R.id.tvMonthTitle)
@@ -32,12 +38,10 @@ class CalendarPagerAdapter(
     override fun onBindViewHolder(holder: CalendarViewHolder, position: Int) {
         val yearMonth = getYearMonthForPosition(position)
 
-        // Título del mes en español con primera letra mayúscula
         val monthName = yearMonth.month.getDisplayName(TextStyle.FULL, Locale("es", "ES"))
         val monthCapitalized = monthName.replaceFirstChar { it.uppercase() }
         holder.monthTitle.text = "$monthCapitalized ${yearMonth.year}"
 
-        // Renderizar calendario con custodia
         val custodyCalculator = MainActivity.CustodyCalculator(viewModel)
         val calendarText = calendarRenderer.renderMonthWithCustody(
             yearMonth,
@@ -45,7 +49,69 @@ class CalendarPagerAdapter(
             viewModel.parent1Name,
             viewModel.parent2Name
         )
-        holder.calendarText.text = calendarText
+
+        // Hacer el calendario clickeable día por día
+        val clickableCalendar = makeCalendarClickable(calendarText, yearMonth)
+        holder.calendarText.text = clickableCalendar
+        holder.calendarText.movementMethod = LinkMovementMethod.getInstance()
+        holder.calendarText.highlightColor = Color.TRANSPARENT
+    }
+
+    private fun makeCalendarClickable(calendarText: CharSequence, yearMonth: YearMonth): SpannableString {
+        val spannable = SpannableString(calendarText)
+        val text = calendarText.toString()
+
+        // Buscar el inicio del calendario (después del header)
+        val headerEnd = text.indexOf("\n\n") + 2
+        if (headerEnd < 2) return spannable
+
+        val firstDay = yearMonth.atDay(1)
+        val lastDay = yearMonth.atEndOfMonth()
+        val firstDayOfWeek = firstDay.dayOfWeek.value
+
+        var currentIndex = headerEnd
+        var currentDayOfWeek = firstDayOfWeek
+
+        // Saltar espacios iniciales
+        repeat(firstDayOfWeek - 1) {
+            currentIndex += 4 // "    "
+        }
+
+        for (day in 1..lastDay.dayOfMonth) {
+            val date = yearMonth.atDay(day)
+
+            // Encontrar los dos dígitos del día
+            val dayStr = String.format("%2d", day)
+            val dayStart = currentIndex
+            val dayEnd = dayStart + 2
+
+            if (dayEnd <= text.length) {
+                spannable.setSpan(
+                    object : ClickableSpan() {
+                        override fun onClick(widget: View) {
+                            activity.onCalendarDateClicked(date)
+                        }
+                        override fun updateDrawState(ds: android.text.TextPaint) {
+                            // No subrayar ni cambiar color
+                            ds.isUnderlineText = false
+                        }
+                    },
+                    dayStart,
+                    dayEnd,
+                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                )
+            }
+
+            if (currentDayOfWeek == 7) {
+                currentIndex = text.indexOf('\n', currentIndex) + 1
+                currentDayOfWeek = 1
+            } else {
+                currentIndex += 4 // "##  "
+                currentDayOfWeek++
+            }
+        }
+
+        return spannable
     }
 
     override fun getItemCount(): Int {

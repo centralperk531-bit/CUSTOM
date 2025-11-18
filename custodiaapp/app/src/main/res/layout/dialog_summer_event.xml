@@ -5,6 +5,19 @@
     android:orientation="vertical"
     android:padding="16dp">
 
+    <!-- NUEVO: Leyenda informativa (oculta por defecto) -->
+    <TextView
+        android:id="@+id/tvYearRuleLegend"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#E3F2FD"
+        android:padding="12dp"
+        android:textSize="13sp"
+        android:textColor="#1565C0"
+        android:lineSpacingExtra="4dp"
+        android:visibility="gone"
+        android:layout_marginBottom="16dp"/>
+
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

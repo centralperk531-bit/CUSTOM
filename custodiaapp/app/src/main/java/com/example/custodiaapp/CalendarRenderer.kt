@@ -4,6 +4,7 @@ import android.graphics.Color
 import android.graphics.Typeface
 import android.text.Spannable
 import android.text.SpannableStringBuilder
+import android.text.style.BackgroundColorSpan
 import android.text.style.ForegroundColorSpan
 import android.text.style.StyleSpan
 import java.time.LocalDate
@@ -13,16 +14,14 @@ class CalendarRenderer(
     private val viewModel: CustodyViewModel
 ) {
 
-    // Colores para cada custodio (puedes cambiarlos aquí)
+    // Colores para cada custodio
     private val parent1Color = Color.parseColor("#FFC107") // Amarillo
     private val parent2Color = Color.parseColor("#3F51B5") // Índigo
     private val noCustodyColor = Color.parseColor("#9E9E9E") // Gris
+    private val selectionColor = Color.parseColor("#4CAF50") // Verde para selección
 
-    /**
-     * Renderiza el mes con los días coloreados según el custodio.
-     * Cada día se pinta con el color del custodio asignado (normal, especial, o sin custodia).
-     * La leyenda al final muestra los colores y nombres de cada custodio.
-     */
+    var rangeSelectionManager: RangeSelectionManager? = null
+
     fun renderMonthWithCustody(
         yearMonth: YearMonth,
         custodyCalculator: MainActivity.CustodyCalculator,
@@ -55,7 +54,9 @@ class CalendarRenderer(
         for (day in 1..lastDay.dayOfMonth) {
             val date = yearMonth.atDay(day)
             val custody = custodyCalculator.getCustodyForDate(date)
-            val color = when (custody.parent) {
+
+            // Color del texto según custodia
+            val textColor = when (custody.parent) {
                 ParentType.PARENT1 -> parent1Color
                 ParentType.PARENT2 -> parent2Color
                 ParentType.NONE -> noCustodyColor
@@ -64,12 +65,24 @@ class CalendarRenderer(
             val dayStr = String.format("%2d", day)
             val dayStart = builder.length
             builder.append(dayStr)
+
+            // Aplicar color de texto
             builder.setSpan(
-                ForegroundColorSpan(color),
+                ForegroundColorSpan(textColor),
                 dayStart,
                 dayStart + dayStr.length,
                 Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
             )
+
+            // Aplicar fondo de selección si está en el rango
+            if (rangeSelectionManager?.isDateInRange(date) == true) {
+                builder.setSpan(
+                    BackgroundColorSpan(selectionColor),
+                    dayStart,
+                    dayStart + dayStr.length,
+                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                )
+            }
 
             if (currentDayOfWeek == 7) {
                 builder.append("\n")
