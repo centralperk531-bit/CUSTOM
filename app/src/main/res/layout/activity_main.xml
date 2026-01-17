@@ -602,6 +602,15 @@
                             android:layout_marginBottom="12dp"/>
 
                         <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnPremium"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="⭐ Premium"
+                            app:cornerRadius="8dp"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
+                            android:layout_marginBottom="16dp"/>
+
+                        <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnManageSpecialDates"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"

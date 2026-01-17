@@ -22,8 +22,11 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.util.Locale
 import android.view.animation.AnimationUtils
+import com.google.android.gms.ads.MobileAds
+import com.google.android.material.button.MaterialButton
 import java.util.Calendar
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+import com.tusiglas.custodiaapp.AdManager
 
 
 class MainActivity : AppCompatActivity() {
@@ -31,6 +34,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var viewModel: CustodyViewModel
     private lateinit var preferencesManager: PreferencesManager
     private lateinit var calendarAdapter: CalendarPagerAdapter
+    private lateinit var adManager: AdManager
 
     private val custodyCalculator by lazy { CustodyCalculator(viewModel) }
     private val calendarRenderer by lazy { CalendarRenderer(viewModel) }
@@ -57,6 +61,9 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        MobileAds.initialize(this) {}
+        adManager = AdManager(this)
+        adManager.loadAd()
 
         // Forzar tamaño de fuente estándar en todos los dispositivos
         val configuration = resources.configuration
@@ -267,10 +274,27 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnSearch).setOnClickListener { searchCustody() }
         findViewById<Button>(R.id.btnSaveConfig).setOnClickListener { saveConfiguration() }
         findViewById<Button>(R.id.btnManageSpecialDates).setOnClickListener { showSpecialDatesManager() }
-        findViewById<Button>(R.id.btnManageNoCustody).setOnClickListener { showPeriodsManager() }
-        findViewById<Button>(R.id.btnManageChristmas).setOnClickListener { showChristmasManager() }
-        findViewById<Button>(R.id.btnManageEaster).setOnClickListener { showEasterManager() }
-        findViewById<Button>(R.id.btnManagePatternChanges).setOnClickListener { showPatternChangesManager() }
+        findViewById<Button>(R.id.btnPremium).setOnClickListener { showPremiumDialog() }
+        findViewById<Button>(R.id.btnManagePatternChanges).setOnClickListener {
+            if (checkTrialOrShowExpiredDialog()) {
+                adManager.showAdIfNotPremium(this) { showPatternChangesManager() }
+            }
+        }
+        findViewById<Button>(R.id.btnManageNoCustody).setOnClickListener {
+            if (checkTrialOrShowExpiredDialog()) {
+                adManager.showAdIfNotPremium(this) { showPeriodsManager() }
+            }
+        }
+        findViewById<Button>(R.id.btnManageChristmas).setOnClickListener {
+            if (checkTrialOrShowExpiredDialog()) {
+                adManager.showAdIfNotPremium(this) { showChristmasManager() }
+            }
+        }
+        findViewById<Button>(R.id.btnManageEaster).setOnClickListener {
+            if (checkTrialOrShowExpiredDialog()) {
+                adManager.showAdIfNotPremium(this) { showEasterManager() }
+            }
+        }
         findViewById<Button>(R.id.btnDeleteAll).setOnClickListener { showDeleteAllConfirmation() }
         findViewById<ExtendedFloatingActionButton>(R.id.fabExportPdf).setOnClickListener {
             showExportRangeDatePickerDialog()
@@ -494,6 +518,69 @@ class MainActivity : AppCompatActivity() {
             calendar.get(java.util.Calendar.MONTH),
             calendar.get(java.util.Calendar.DAY_OF_MONTH)).show()
     }
+
+    private fun showPremiumDialog() {
+        val dialogView = layoutInflater.inflate(R.layout.fragment_premium, null)
+        val preferencesManager = PreferencesManager(this)
+
+        val dialog = AlertDialog.Builder(this)
+            .setView(dialogView)
+            .create()
+
+        // Actualizar info inicial
+        updatePremiumDialogInfo(dialogView, preferencesManager)
+
+        // Botones principales
+        dialogView.findViewById<MaterialButton>(R.id.btnBuyPremium)?.setOnClickListener {
+            preferencesManager.setPremium(true)
+            dialog.dismiss()
+            showMessage("✅ Premium activado (testing)")
+        }
+
+        dialogView.findViewById<MaterialButton>(R.id.btnRestorePurchase)?.setOnClickListener {
+            showMessage("Esto restaurará compras reales en Fase 5")
+        }
+
+        // Botones de testing
+        dialogView.findViewById<MaterialButton>(R.id.btnSimulate30Days)?.setOnClickListener {
+            preferencesManager.simulateDaysPassedForTesting(30)
+            updatePremiumDialogInfo(dialogView, preferencesManager)
+            showMessage("⏱️ Simulados 30 días pasados")
+        }
+
+        dialogView.findViewById<MaterialButton>(R.id.btnResetTrial)?.setOnClickListener {
+            preferencesManager.resetInstallDateForTesting()
+            updatePremiumDialogInfo(dialogView, preferencesManager)
+            showMessage("🔄 Periodo reseteado a 30 días")
+        }
+
+        dialogView.findViewById<MaterialButton>(R.id.btnTogglePremium)?.setOnClickListener {
+            val newStatus = !preferencesManager.isPremium()
+            preferencesManager.setPremium(newStatus)
+            updatePremiumDialogInfo(dialogView, preferencesManager)
+            showMessage("⭐ Premium: ${if (newStatus) "ACTIVADO" else "DESACTIVADO"}")
+        }
+
+        dialog.show()
+    }
+
+    private fun updatePremiumDialogInfo(view: View, prefs: PreferencesManager) {
+        val tvTrialInfo = view.findViewById<TextView>(R.id.tvTrialInfo)
+        val daysRemaining = prefs.getTrialDaysRemaining()
+
+        val message = when {
+            prefs.isPremium() -> "✅ Tienes la versión Premium"
+            daysRemaining > 0 -> "📅 Periodo de prueba: $daysRemaining días restantes"
+            else -> "⚠️ Tu periodo de prueba ha finalizado"
+        }
+
+        tvTrialInfo?.text = message
+    }
+
+    private fun showMessage(text: String) {
+        android.widget.Toast.makeText(this, text, android.widget.Toast.LENGTH_SHORT).show()
+    }
+
 
     // ============= GESTIÓN DE FECHAS DESDE CALENDARIO =============
     fun showDatePickerForContextMenu(date: LocalDate, onDateConfigured: () -> Unit) {
@@ -2138,12 +2225,31 @@ class MainActivity : AppCompatActivity() {
             .setTitle("🌟 Función Premium")
             .setMessage("La exportación a PDF es una función exclusiva de la versión Premium.\n\n¿Deseas desbloquear todas las funciones Premium?")
             .setPositiveButton("Ver Premium") { _, _ ->
-                // TODO: Navegar a PremiumFragment (lo haremos en el siguiente paso)
-                Toast.makeText(this, "Próximamente: pantalla Premium", Toast.LENGTH_SHORT).show()
+                showPremiumDialog()
             }
             .setNegativeButton("Ahora no", null)
             .show()
     }
+
+
+    private fun checkTrialOrShowExpiredDialog(): Boolean {
+        val prefsManager = PreferencesManager(this)
+
+        if (prefsManager.isTrialExpired()) {
+            AlertDialog.Builder(this)
+                .setTitle("⚠️ Periodo de prueba finalizado")
+                .setMessage("Tu periodo de prueba de 30 días ha expirado.\n\nPara seguir editando tu calendario de custodia, actualiza a Premium por solo 4,99€.")
+                .setPositiveButton("Ver Premium") { _, _ ->
+                    showPremiumDialog()
+                }
+                .setNegativeButton("Cancelar", null)
+                .show()
+            return false
+        }
+
+        return true
+    }
+
 
 
 }
