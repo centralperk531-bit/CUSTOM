@@ -80,5 +80,8 @@ dependencies {
     //AdMob
     implementation("com.google.android.gms:play-services-ads:23.6.0")
 
+    // NUEVA: Google Play Billing Library 7
+    implementation("com.android.billingclient:billing:7.0.0")
+
 }
 

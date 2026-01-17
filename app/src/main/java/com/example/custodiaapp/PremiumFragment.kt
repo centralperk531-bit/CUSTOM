@@ -69,26 +69,25 @@ class PremiumFragment : Fragment() {
     }
 
     private fun showTestPurchaseDialog() {
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle("Compra de prueba")
-            .setMessage("Esto activará Premium de forma temporal para testing.\n\n(En la versión final, aquí irá Google Play Billing)")
-            .setPositiveButton("Activar Premium") { _, _ ->
-                preferencesManager.setPremium(true)
-                showSuccessDialog()
-            }
-            .setNegativeButton("Cancelar", null)
-            .show()
+        // Obtener billingManager desde MainActivity
+        val billingManager = (requireActivity() as MainActivity).getBillingManager()
+
+        // Lanzar flujo de compra real de Google Play
+        billingManager.launchPurchaseFlow()
     }
 
+
     private fun showRestoreDialog() {
+        // Obtener billingManager desde MainActivity
+        val billingManager = (requireActivity() as MainActivity).getBillingManager()
+
+        // Verificar compras existentes en Google Play
+        billingManager.queryPurchases()
+
         MaterialAlertDialogBuilder(requireContext())
-            .setTitle("Restaurar compra")
-            .setMessage("¿Ya compraste Premium anteriormente?")
-            .setPositiveButton("Sí, activar") { _, _ ->
-                preferencesManager.setPremium(true)
-                showSuccessDialog()
-            }
-            .setNegativeButton("Cancelar", null)
+            .setTitle("Restaurando compra...")
+            .setMessage("Verificando tus compras en Google Play")
+            .setPositiveButton("OK", null)
             .show()
     }
 
@@ -137,4 +136,13 @@ class PremiumFragment : Fragment() {
             .setPositiveButton("OK", null)
             .show()
     }
+
+    override fun onResume() {
+        super.onResume()
+        // Actualizar info cuando vuelve a esta pantalla
+        view?.let { v ->
+            updateTrialInfo(v.findViewById(R.id.tvTrialInfo))
+        }
+    }
+
 }

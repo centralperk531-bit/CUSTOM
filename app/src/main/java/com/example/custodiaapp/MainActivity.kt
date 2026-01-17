@@ -35,6 +35,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var preferencesManager: PreferencesManager
     private lateinit var calendarAdapter: CalendarPagerAdapter
     private lateinit var adManager: AdManager
+    private lateinit var billingManager: BillingManager
 
     private val custodyCalculator by lazy { CustodyCalculator(viewModel) }
     private val calendarRenderer by lazy { CalendarRenderer(viewModel) }
@@ -79,6 +80,22 @@ class MainActivity : AppCompatActivity() {
     private fun initializeViewModel() {
         viewModel = ViewModelProvider(this)[CustodyViewModel::class.java]
         preferencesManager = PreferencesManager(this)
+
+        billingManager = BillingManager(
+            activity = this,
+            preferencesManager = preferencesManager,
+            onPurchaseSuccess = {
+                Toast.makeText(this, "¡Premium activado! 🎉", Toast.LENGTH_LONG).show()
+                recreate()
+            },
+            onPurchaseError = { error ->
+                Toast.makeText(this, "Error: $error", Toast.LENGTH_LONG).show()
+            }
+        )
+
+        if (preferencesManager.hasConfiguration()) {  // ← Esta línea ya existe
+            preferencesManager.loadConfiguration(viewModel)
+        }
 
         if (preferencesManager.hasConfiguration()) {
             preferencesManager.loadConfiguration(viewModel)
@@ -2238,7 +2255,7 @@ class MainActivity : AppCompatActivity() {
         if (prefsManager.isTrialExpired()) {
             AlertDialog.Builder(this)
                 .setTitle("⚠️ Periodo de prueba finalizado")
-                .setMessage("Tu periodo de prueba de 30 días ha expirado.\n\nPara seguir editando tu calendario de custodia, actualiza a Premium por solo 4,99€.")
+                .setMessage("Tu periodo de prueba de 30 días ha expirado.\n\nPara seguir editando tu calendario de custodia, actualiza a Premium por solo 2,49€.")
                 .setPositiveButton("Ver Premium") { _, _ ->
                     showPremiumDialog()
                 }
@@ -2250,6 +2267,13 @@ class MainActivity : AppCompatActivity() {
         return true
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        billingManager.endConnection()
+    }
 
+    fun getBillingManager(): BillingManager {
+        return billingManager
+    }
 
 }
