@@ -27,7 +27,10 @@ import com.google.android.material.button.MaterialButton
 import java.util.Calendar
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import com.tusiglas.custodiaapp.AdManager
-
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import android.net.Uri
+import java.text.SimpleDateFormat
+import java.util.*
 
 class MainActivity : AppCompatActivity() {
 
@@ -307,6 +310,19 @@ class MainActivity : AppCompatActivity() {
                 adManager.showAdIfNotPremium(this) { showChristmasManager() }
             }
         }
+        // Botón Guardar Backup
+        findViewById<MaterialButton>(R.id.btnSaveBackup).setOnClickListener {
+            if (checkTrialOrShowExpiredDialog()) {
+                handleSaveBackup()
+            }
+        }
+        // Botón Restaurar Backup
+        findViewById<MaterialButton>(R.id.btnRestoreBackup).setOnClickListener {
+            if (checkTrialOrShowExpiredDialog()) {
+                handleRestoreBackup()
+            }
+        }
+
         findViewById<Button>(R.id.btnManageEaster).setOnClickListener {
             if (checkTrialOrShowExpiredDialog()) {
                 adManager.showAdIfNotPremium(this) { showEasterManager() }
@@ -2275,5 +2291,164 @@ class MainActivity : AppCompatActivity() {
     fun getBillingManager(): BillingManager {
         return billingManager
     }
+    private fun handleSaveBackup() {
+        // Verificar Premium
+        if (!preferencesManager.isPremium()) {
+            showPremiumRequiredDialog()
+            return
+        }
 
+        // Preguntar si quiere elegir ubicación o guardar rápido
+        MaterialAlertDialogBuilder(this)
+            .setTitle("💾 Guardar Backup")
+            .setMessage("¿Dónde deseas guardar el backup?")
+            .setPositiveButton("Elegir carpeta") { _, _ ->
+                createBackupWithFolderPicker()
+            }
+            .setNeutralButton("Guardar y compartir") { _, _ ->
+                createBackupAndShare()
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+
+    private fun createBackupWithFolderPicker() {
+        val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+        val fileName = "custodiaapp_backup_$timestamp.json"
+
+        val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "application/json"
+            putExtra(Intent.EXTRA_TITLE, fileName)
+        }
+        startActivityForResult(intent, REQUEST_CODE_SAVE_BACKUP)
+    }
+
+    private fun createBackupAndShare() {
+        val backupManager = BackupManager(this)
+        val result = backupManager.createBackup()
+
+        if (result.isSuccess) {
+            val file = result.getOrNull()!!
+            backupManager.shareBackup(file)
+        } else {
+            MaterialAlertDialogBuilder(this)
+                .setTitle("❌ Error")
+                .setMessage("No se pudo crear el backup:\n${result.exceptionOrNull()?.message}")
+                .setPositiveButton("OK", null)
+                .show()
+        }
+    }
+
+    private fun openFilePickerForRestore() {
+        val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+            type = "application/json"
+            addCategory(Intent.CATEGORY_OPENABLE)
+        }
+        startActivityForResult(intent, REQUEST_CODE_RESTORE_BACKUP)
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        when (requestCode) {
+            REQUEST_CODE_SAVE_BACKUP -> {
+                if (resultCode == RESULT_OK) {
+                    data?.data?.let { uri ->
+                        saveBackupToUri(uri)
+                    }
+                }
+            }
+            REQUEST_CODE_RESTORE_BACKUP -> {
+                if (resultCode == RESULT_OK) {
+                    data?.data?.let { uri ->
+                        restoreBackupFromUri(uri)
+                    }
+                }
+            }
+        }
+    }
+    private fun handleRestoreBackup() {
+        // Verificar Premium
+        if (!preferencesManager.isPremium()) {
+            showPremiumRequiredDialog()
+            return
+        }
+
+        // Mostrar advertencia antes de restaurar
+        MaterialAlertDialogBuilder(this)
+            .setTitle("⚠️ Restaurar Backup")
+            .setMessage("Esto reemplazará toda tu configuración actual con los datos del backup.\n\n¿Estás seguro?")
+            .setPositiveButton("Seleccionar archivo") { _, _ ->
+                openFilePickerForRestore()
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+
+    private fun saveBackupToUri(uri: Uri) {
+        val backupManager = BackupManager(this)
+        val result = backupManager.createBackup()
+
+        if (result.isSuccess) {
+            val tempFile = result.getOrNull()!!
+
+            try {
+                // Copiar el contenido al URI seleccionado
+                contentResolver.openOutputStream(uri)?.use { outputStream ->
+                    tempFile.inputStream().use { inputStream ->
+                        inputStream.copyTo(outputStream)
+                    }
+                }
+
+                MaterialAlertDialogBuilder(this)
+                    .setTitle("✅ Backup guardado")
+                    .setMessage("El backup se ha guardado correctamente en la ubicación seleccionada.\n\n¿Deseas compartirlo también?")
+                    .setPositiveButton("Compartir") { _, _ ->
+                        backupManager.shareBackup(tempFile)
+                    }
+                    .setNegativeButton("Cerrar", null)
+                    .show()
+            } catch (e: Exception) {
+                MaterialAlertDialogBuilder(this)
+                    .setTitle("❌ Error")
+                    .setMessage("No se pudo guardar el archivo:\n${e.message}")
+                    .setPositiveButton("OK", null)
+                    .show()
+            }
+        } else {
+            MaterialAlertDialogBuilder(this)
+                .setTitle("❌ Error")
+                .setMessage("No se pudo crear el backup:\n${result.exceptionOrNull()?.message}")
+                .setPositiveButton("OK", null)
+                .show()
+        }
+    }
+
+    private fun restoreBackupFromUri(uri: Uri) {
+        val backupManager = BackupManager(this)
+        val result = backupManager.restoreBackup(uri)
+
+        if (result.isSuccess) {
+            MaterialAlertDialogBuilder(this)
+                .setTitle("✅ Backup restaurado")
+                .setMessage("La configuración se ha restaurado correctamente.\n\nLa app se reiniciará para aplicar los cambios.")
+                .setPositiveButton("Reiniciar") { _, _ ->
+                    recreate() // Reinicia la actividad
+                }
+                .setCancelable(false)
+                .show()
+        } else {
+            MaterialAlertDialogBuilder(this)
+                .setTitle("❌ Error")
+                .setMessage("No se pudo restaurar el backup:\n${result.exceptionOrNull()?.message}")
+                .setPositiveButton("OK", null)
+                .show()
+        }
+    }
+
+    companion object {
+        private const val REQUEST_CODE_SAVE_BACKUP = 1000
+        private const val REQUEST_CODE_RESTORE_BACKUP = 1001
+    }
 }

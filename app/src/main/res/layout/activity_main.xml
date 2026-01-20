@@ -305,6 +305,15 @@
                 android:orientation="vertical"
                 android:padding="16dp">
 
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnPremium"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="⭐ Premium"
+                    app:cornerRadius="8dp"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_marginBottom="16dp"/>
+
                 <!-- Card Nombres -->
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
@@ -602,15 +611,6 @@
                             android:layout_marginBottom="12dp"/>
 
                         <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnPremium"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="⭐ Premium"
-                            app:cornerRadius="8dp"
-                            style="@style/Widget.Material3.Button.OutlinedButton"
-                            android:layout_marginBottom="16dp"/>
-
-                        <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnManageSpecialDates"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -651,6 +651,50 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:text="🐣 Semana Santa"
+                            app:cornerRadius="8dp"
+                            style="@style/Widget.Material3.Button.OutlinedButton"/>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Card Copia de Seguridad -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    app:cardElevation="2dp"
+                    app:cardCornerRadius="12dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="💾 Copia de Seguridad"
+                            android:textSize="18sp"
+                            android:textStyle="bold"
+                            android:textColor="?attr/colorPrimary"
+                            android:layout_marginBottom="12dp"/>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnSaveBackup"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="💾 Guardar Backup"
+                            app:icon="@android:drawable/ic_menu_save"
+                            app:cornerRadius="8dp"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
+                            android:layout_marginBottom="8dp"/>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnRestoreBackup"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="📥 Restaurar Backup"
+                            app:icon="@android:drawable/ic_menu_revert"
                             app:cornerRadius="8dp"
                             style="@style/Widget.Material3.Button.OutlinedButton"/>
                     </LinearLayout>

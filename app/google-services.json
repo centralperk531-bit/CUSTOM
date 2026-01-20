@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "20464920157",
+    "project_id": "custodiaapp-4d165",
+    "storage_bucket": "custodiaapp-4d165.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:20464920157:android:71e947ad16a85efa8d4fb4",
+        "android_client_info": {
+          "package_name": "com.example.custodiaapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAe9Ww7PUk95dtiCFsYA83Kfb2UjIThKDM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
