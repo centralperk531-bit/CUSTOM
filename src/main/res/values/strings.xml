@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Custodia App</string>
+
+    <!-- Tabs -->
+    <string name="tab_calendar">Calendario</string>
+    <string name="tab_search">Consultar</string>
+    <string name="tab_stats">Stats</string>
+    <string name="tab_config">Config</string>
+
+    <!-- Labels -->
+    <string name="label_parent1">Custodio 1</string>
+    <string name="label_parent2">Custodio 2</string>
+    <string name="label_search_date">Consultar fecha específica</string>
+    <string name="label_date">Fecha</string>
+    <string name="label_custody">Custodia</string>
+    <string name="label_custody_pattern">Orden de custodia</string>
+    <string name="label_change_day">Día de cambio</string>
+    <string name="label_summer_division">División de verano</string>
+    <string name="label_christmas_division">Navidad - Quién empieza en período 1</string>
+    <string name="label_month_year">Mes y Año</string>
+    <string name="btn_prev_month">◀ Anterior</string>
+    <string name="btn_next_month">Siguiente ▶</string>
+    <string name="cd_previous_month">Mes anterior</string>
+    <string name="cd_next_month">Mes siguiente</string>
+    <string name="hint_date_format">dd/MM/yyyy (ej: 25/12/2025)</string>
+
+    <!-- Buttons -->
+    <string name="btn_search">Buscar</string>
+    <string name="btn_save">Guardar Configuración</string>
+
+    <!-- Content descriptions -->
+    <string name="cd_search_button">Botón de búsqueda</string>
+
+    <!-- Default values -->
+    <string name="default_parent1">Custodio 1</string>
+    <string name="default_parent2">Custodio 2</string>
+
+    <!-- Messages -->
+    <string name="success_saved">Configuración guardada</string>
+    <string name="error_empty_date">Por favor ingresa una fecha</string>
+    <string name="error_invalid_date">Formato de fecha inválido (usar dd/MM/yyyy)</string>
+</resources>
