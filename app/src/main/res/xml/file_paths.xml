@@ -6,4 +6,7 @@
     <external-files-path
         name="documents"
         path="Documents/" />
+    <external-files-path
+        name="backup_files"
+        path="." />
 </paths>

@@ -3,6 +3,8 @@ package com.example.custodiaapp
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.util.Log
+import android.widget.Toast
 import androidx.core.content.FileProvider
 import org.json.JSONObject
 import java.io.File
@@ -107,21 +109,33 @@ class BackupManager(private val context: Context) {
      * Comparte el archivo de backup por WhatsApp, Telegram, email, etc.
      * @param file Archivo a compartir
      */
-    fun shareBackup(file: File) {
-        val uri = FileProvider.getUriForFile(
-            context,
-            "${context.packageName}.fileprovider",
-            file
-        )
+    fun shareBackup(context: Context, backupFile: File) {
+        try {
+            // Verificar que el archivo existe
+            if (!backupFile.exists()) {
+                Toast.makeText(context, "El archivo de backup no existe", Toast.LENGTH_SHORT).show()
+                return
+            }
 
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "application/json"
-            putExtra(Intent.EXTRA_STREAM, uri)
-            putExtra(Intent.EXTRA_SUBJECT, "Backup Mi Turno Family")
-            putExtra(Intent.EXTRA_TEXT, "Backup de Mi Turno Family creado el ${SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())}")
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            val uri = FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                backupFile
+            )
+
+            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                type = "application/json"
+                putExtra(Intent.EXTRA_STREAM, uri)
+                putExtra(Intent.EXTRA_SUBJECT, "Backup CustodiaApp")
+                putExtra(Intent.EXTRA_TEXT, "Backup creado el ${SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())}")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+
+            context.startActivity(Intent.createChooser(shareIntent, "Compartir backup con..."))
+
+        } catch (e: Exception) {
+            Log.e("BackupManager", "Error al compartir backup", e)
+            Toast.makeText(context, "Error al compartir: ${e.message}", Toast.LENGTH_LONG).show()
         }
-
-        context.startActivity(Intent.createChooser(intent, "Compartir backup"))
     }
 }

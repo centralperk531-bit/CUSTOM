@@ -43,8 +43,11 @@ class PremiumFragment : Fragment() {
 
         // Por ahora, botones de prueba
         btnBuyPremium.setOnClickListener {
-            // TODO: Integrar Google Play Billing (Fase 5)
-            showTestPurchaseDialog()
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Próximamente")
+                .setMessage("El sistema de pagos estará disponible próximamente. Por ahora puedes probar todas las funciones Premium de forma gratuita durante 30 días.")
+                .setPositiveButton("Entendido", null)
+                .show()
         }
 
         btnRestorePurchase.setOnClickListener {
@@ -104,9 +107,16 @@ class PremiumFragment : Fragment() {
     private fun setupTestingButtons(view: View) {
         // Solo visible en modo debug para testing
         if (true) {
+            android.util.Log.d("DEBUG_PREMIUM", "Los botones deberían aparecer")
+            val tvTestingLabel = view.findViewById<TextView>(R.id.tvTestingLabel)
             val btnSimulate30Days = view.findViewById<MaterialButton>(R.id.btnSimulate30Days)
             val btnResetTrial = view.findViewById<MaterialButton>(R.id.btnResetTrial)
             val btnTogglePremium = view.findViewById<MaterialButton>(R.id.btnTogglePremium)
+
+            tvTestingLabel.visibility = View.VISIBLE
+            btnSimulate30Days.visibility = View.VISIBLE
+            btnResetTrial.visibility = View.VISIBLE
+            btnTogglePremium.visibility = View.VISIBLE
 
             btnSimulate30Days?.setOnClickListener {
                 preferencesManager.simulateDaysPassedForTesting(30)

@@ -294,7 +294,18 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnSearch).setOnClickListener { searchCustody() }
         findViewById<Button>(R.id.btnSaveConfig).setOnClickListener { saveConfiguration() }
         findViewById<Button>(R.id.btnManageSpecialDates).setOnClickListener { showSpecialDatesManager() }
-        findViewById<Button>(R.id.btnPremium).setOnClickListener { showPremiumDialog() }
+        findViewById<Button>(R.id.btnPremium).setOnClickListener {
+            findViewById<View>(R.id.tabCalendar).visibility = View.GONE
+            findViewById<View>(R.id.tabSearch).visibility = View.GONE
+            findViewById<View>(R.id.tabStats).visibility = View.GONE
+            findViewById<View>(R.id.tabConfig).visibility = View.GONE
+
+            supportFragmentManager.beginTransaction()
+                .replace(R.id.tabContentContainer, PremiumFragment())
+                .addToBackStack(null)
+                .commit()
+        }
+
         findViewById<Button>(R.id.btnManagePatternChanges).setOnClickListener {
             if (checkTrialOrShowExpiredDialog()) {
                 adManager.showAdIfNotPremium(this) { showPatternChangesManager() }
@@ -630,12 +641,17 @@ class MainActivity : AppCompatActivity() {
             if (range != null) {
                 // Llamar al diálogo correspondiente según el tipo
                 when (pendingEventType) {
-                    "PERIOD" -> showRangeConfigDialog(range.first, range.second, "") { updateDisplay() }
+                    "PERIOD" -> {
+                        adManager.showAdIfNotPremium(this) {
+                            showRangeConfigDialog(range.first, range.second, "") { updateDisplay() }
+                        }
+                    }
                     "CHRISTMAS" -> showRangeConfigDialog(range.first, range.second, "Navidad") { updateDisplay() }
                     "EASTER" -> showRangeConfigDialog(range.first, range.second, "Semana Santa") { updateDisplay() }
                     "SPECIAL_DATE" -> {
-                        // Para fecha especial solo usar el primer día
-                        showSpecialDateConfigDialog(range.first)
+                        adManager.showAdIfNotPremium(this) {
+                            showSpecialDateConfigDialog(range.first)
+                        }
                     }
                 }
             }
@@ -871,30 +887,34 @@ class MainActivity : AppCompatActivity() {
     // ============= DIÁLOGOS DE GESTIÓN =============
 
     private fun showSpecialDatesManager() {
-        // Mostrar opciones: añadir o ver lista
-        val options = if (viewModel.specialDates.isEmpty()) {
-            arrayOf("➕ Añadir fecha especial")
-        } else {
-            arrayOf("➕ Añadir fecha especial", "📋 Ver lista (${viewModel.specialDates.size})")
-        }
-
-        AlertDialog.Builder(this)
-            .setTitle("Gestionar Fechas Especiales")
-            .setItems(options) { _, which ->
-                when (which) {
-                    0 -> {
-                        // Añadir nueva fecha especial
-                        pendingEventType = "SPECIAL_DATE"
-                        rangeSelectionManager.clearSelection()
-                        findViewById<TabLayout>(R.id.tabLayout).getTabAt(0)?.select()
-                        showSelectionToast("📅 Selecciona UNA fecha en el calendario para la fecha especial")
-                    }
-                    1 -> showSpecialDatesList()
-                }
+        // Mostrar anuncio antes de abrir el gestor
+        adManager.showAdIfNotPremium(this) {
+            // Mostrar opciones: añadir o ver lista
+            val options = if (viewModel.specialDates.isEmpty()) {
+                arrayOf("➕ Añadir fecha especial")
+            } else {
+                arrayOf("➕ Añadir fecha especial", "📋 Ver lista (${viewModel.specialDates.size})")
             }
-            .setNegativeButton("Cerrar", null)
-            .show()
+
+            AlertDialog.Builder(this)
+                .setTitle("Gestionar Fechas Especiales")
+                .setItems(options) { _, which ->
+                    when (which) {
+                        0 -> {
+                            // Añadir nueva fecha especial
+                            pendingEventType = "SPECIAL_DATE"
+                            rangeSelectionManager.clearSelection()
+                            findViewById<TabLayout>(R.id.tabLayout).getTabAt(0)?.select()
+                            showSelectionToast("📅 Selecciona UNA fecha en el calendario para la fecha especial")
+                        }
+                        1 -> showSpecialDatesList()
+                    }
+                }
+                .setNegativeButton("Cerrar", null)
+                .show()
+        }
     }
+
 
     private fun showSpecialDateConfigDialog(date: LocalDate) {
         // Verificar si ya existe un evento en esta fecha
@@ -2330,7 +2350,7 @@ class MainActivity : AppCompatActivity() {
 
         if (result.isSuccess) {
             val file = result.getOrNull()!!
-            backupManager.shareBackup(file)
+            backupManager.shareBackup(this, file)
         } else {
             MaterialAlertDialogBuilder(this)
                 .setTitle("❌ Error")
@@ -2405,7 +2425,7 @@ class MainActivity : AppCompatActivity() {
                     .setTitle("✅ Backup guardado")
                     .setMessage("El backup se ha guardado correctamente en la ubicación seleccionada.\n\n¿Deseas compartirlo también?")
                     .setPositiveButton("Compartir") { _, _ ->
-                        backupManager.shareBackup(tempFile)
+                        backupManager.shareBackup(this, tempFile)
                     }
                     .setNegativeButton("Cerrar", null)
                     .show()
