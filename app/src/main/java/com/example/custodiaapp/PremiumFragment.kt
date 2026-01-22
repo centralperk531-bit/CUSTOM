@@ -10,7 +10,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import android.widget.TextView
 
 class PremiumFragment : Fragment() {
-
+    private val mostrarBotonesTesting = false
     private lateinit var preferencesManager: PreferencesManager
 
     override fun onCreateView(
@@ -106,7 +106,7 @@ class PremiumFragment : Fragment() {
 
     private fun setupTestingButtons(view: View) {
         // Solo visible en modo debug para testing
-        if (true) {
+        if (mostrarBotonesTesting) {  // ← CAMBIADO: era if (true)
             android.util.Log.d("DEBUG_PREMIUM", "Los botones deberían aparecer")
             val tvTestingLabel = view.findViewById<TextView>(R.id.tvTestingLabel)
             val btnSimulate30Days = view.findViewById<MaterialButton>(R.id.btnSimulate30Days)

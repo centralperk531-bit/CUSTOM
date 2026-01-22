@@ -31,6 +31,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import android.net.Uri
 import java.text.SimpleDateFormat
 import java.util.*
+import com.example.custodiaapp.BuildConfig
 
 class MainActivity : AppCompatActivity() {
 
@@ -61,6 +62,7 @@ class MainActivity : AppCompatActivity() {
     private val edtStatsStartDate by lazy { findViewById<EditText>(R.id.edtStatsStartDate) }
     private val edtStatsEndDate by lazy { findViewById<EditText>(R.id.edtStatsEndDate) }
     private val btnCalculateStats by lazy { findViewById<Button>(R.id.btnCalculateStats) }
+    private val mostrarBotonesTesting = false  // ← CAMBIA A true solo para debug
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -574,39 +576,45 @@ class MainActivity : AppCompatActivity() {
         // Actualizar info inicial
         updatePremiumDialogInfo(dialogView, preferencesManager)
 
-        // Botones principales
+        // Botón de compra (siempre visible, muestra mensaje)
         dialogView.findViewById<MaterialButton>(R.id.btnBuyPremium)?.setOnClickListener {
-            preferencesManager.setPremium(true)
-            dialog.dismiss()
-            showMessage("✅ Premium activado (testing)")
+            showMessage("🚀 El sistema de pagos estará disponible próximamente")
         }
 
         dialogView.findViewById<MaterialButton>(R.id.btnRestorePurchase)?.setOnClickListener {
-            showMessage("Esto restaurará compras reales en Fase 5")
+            showMessage("🔄 Restaurar compras estará disponible próximamente")
         }
 
-        // Botones de testing
-        dialogView.findViewById<MaterialButton>(R.id.btnSimulate30Days)?.setOnClickListener {
-            preferencesManager.simulateDaysPassedForTesting(30)
-            updatePremiumDialogInfo(dialogView, preferencesManager)
-            showMessage("⏱️ Simulados 30 días pasados")
-        }
+        if (mostrarBotonesTesting) {
+            // Botones de testing (ocultos en producción)
+            dialogView.findViewById<MaterialButton>(R.id.btnSimulate30Days)?.setOnClickListener {
+                preferencesManager.simulateDaysPassedForTesting(30)
+                updatePremiumDialogInfo(dialogView, preferencesManager)
+                showMessage("⏱️ Simulados 30 días pasados")
+            }
 
-        dialogView.findViewById<MaterialButton>(R.id.btnResetTrial)?.setOnClickListener {
-            preferencesManager.resetInstallDateForTesting()
-            updatePremiumDialogInfo(dialogView, preferencesManager)
-            showMessage("🔄 Periodo reseteado a 30 días")
-        }
+            dialogView.findViewById<MaterialButton>(R.id.btnResetTrial)?.setOnClickListener {
+                preferencesManager.resetInstallDateForTesting()
+                updatePremiumDialogInfo(dialogView, preferencesManager)
+                showMessage("🔄 Periodo reseteado a 30 días")
+            }
 
-        dialogView.findViewById<MaterialButton>(R.id.btnTogglePremium)?.setOnClickListener {
-            val newStatus = !preferencesManager.isPremium()
-            preferencesManager.setPremium(newStatus)
-            updatePremiumDialogInfo(dialogView, preferencesManager)
-            showMessage("⭐ Premium: ${if (newStatus) "ACTIVADO" else "DESACTIVADO"}")
+            dialogView.findViewById<MaterialButton>(R.id.btnTogglePremium)?.setOnClickListener {
+                val newStatus = !preferencesManager.isPremium()
+                preferencesManager.setPremium(newStatus)
+                updatePremiumDialogInfo(dialogView, preferencesManager)
+                showMessage("⭐ Premium: ${if (newStatus) "ACTIVADO" else "DESACTIVADO"}")
+            }
+        } else {
+            // Ocultar botones de testing en producción
+            dialogView.findViewById<MaterialButton>(R.id.btnSimulate30Days)?.visibility = View.GONE
+            dialogView.findViewById<MaterialButton>(R.id.btnResetTrial)?.visibility = View.GONE
+            dialogView.findViewById<MaterialButton>(R.id.btnTogglePremium)?.visibility = View.GONE
         }
 
         dialog.show()
     }
+
 
     private fun updatePremiumDialogInfo(view: View, prefs: PreferencesManager) {
         val tvTrialInfo = view.findViewById<TextView>(R.id.tvTrialInfo)
@@ -914,7 +922,6 @@ class MainActivity : AppCompatActivity() {
                 .show()
         }
     }
-
 
     private fun showSpecialDateConfigDialog(date: LocalDate) {
         // Verificar si ya existe un evento en esta fecha
@@ -2274,8 +2281,8 @@ class MainActivity : AppCompatActivity() {
 
     // ========== DIÁLOGO PREMIUM REQUERIDO ==========
     private fun showPremiumRequiredDialog() {
-        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
-            .setTitle("🌟 Función Premium")
+        MaterialAlertDialogBuilder(this)
+            .setTitle("⭐ Función Premium")
             .setMessage("La exportación a PDF es una función exclusiva de la versión Premium.\n\n¿Deseas desbloquear todas las funciones Premium?")
             .setPositiveButton("Ver Premium") { _, _ ->
                 showPremiumDialog()
@@ -2283,7 +2290,6 @@ class MainActivity : AppCompatActivity() {
             .setNegativeButton("Ahora no", null)
             .show()
     }
-
 
     private fun checkTrialOrShowExpiredDialog(): Boolean {
         val prefsManager = PreferencesManager(this)

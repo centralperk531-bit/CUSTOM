@@ -5,6 +5,14 @@ plugins {
 
 android {
     namespace = "com.example.custodiaapp"
+    signingConfigs {
+        create("release") {
+            storeFile = file("custodiaapp-keystore.jks")
+            storePassword = "Sml.4791.ICR"
+            keyAlias = "ismaelcr"
+            keyPassword = "Sml.4791.ICR"
+        }
+    }
     compileSdk = 34
 
     defaultConfig {
@@ -19,6 +27,7 @@ android {
 
     buildTypes {
         release {
+            signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -40,6 +49,13 @@ android {
 
     buildFeatures {
         viewBinding = true
+        buildConfig = true  // ← Añade esta línea
+    }
+
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+        }
     }
 }
 
