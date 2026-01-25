@@ -410,6 +410,10 @@ class PreferencesManager(context: Context) {
      * Obtiene la fecha de instalación de la app
      * Si no existe, la crea con la fecha actual
      */
+    /**
+     * Obtiene la fecha de instalación de la app
+     * Si no existe, la crea con la fecha actual
+     */
     fun getInstallDate(): LocalDate {
         val dateString = prefs.getString(KEY_INSTALL_DATE, null)
 
@@ -426,10 +430,12 @@ class PreferencesManager(context: Context) {
             // Primera vez que se ejecuta la app
             val now = LocalDate.now()
             setInstallDate(now)
-            Log.d(TAG, "Install date set to: $now")
+            setPremium(false)  // Asegurar que Premium está desactivado en primera instalación
+            Log.d(TAG, "Install date set to: $now - Premium set to false")
             now
         }
     }
+
 
     /**
      * Establece la fecha de instalación (solo se debe usar internamente)

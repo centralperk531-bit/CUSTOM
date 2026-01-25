@@ -1,8 +1,7 @@
-package com.tusiglas.custodiaapp
+package com.example.custodiaapp
 
 import android.app.Activity
 import android.content.Context
-import com.example.custodiaapp.PreferencesManager
 import com.google.android.gms.ads.AdError
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.FullScreenContentCallback
@@ -15,15 +14,19 @@ class AdManager(private val context: Context) {
     private var interstitialAd: InterstitialAd? = null
     private val preferencesManager = PreferencesManager(context)
 
-    // ID de prueba de Google (cambiarás esto después por tus IDs reales)
-    private val TEST_AD_UNIT_ID = "ca-app-pub-3940256099942544/1033173712"
+    // Se selecciona automáticamente según MODO_TESTING
+    private val INTERSTITIAL_AD_UNIT_ID = if (Config.MODO_TESTING) {
+        "ca-app-pub-3940256099942544/1033173712" // ID de prueba de Google
+    } else {
+        "ca-app-pub-3925937359059811/5636410337" // Tu ID real de producción
+    }
 
     fun loadAd() {
         val adRequest = AdRequest.Builder().build()
 
         InterstitialAd.load(
             context,
-            TEST_AD_UNIT_ID,
+            INTERSTITIAL_AD_UNIT_ID,
             adRequest,
             object : InterstitialAdLoadCallback() {
                 override fun onAdLoaded(ad: InterstitialAd) {

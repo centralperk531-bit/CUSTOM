@@ -10,7 +10,6 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import android.widget.TextView
 
 class PremiumFragment : Fragment() {
-    private val mostrarBotonesTesting = false
     private lateinit var preferencesManager: PreferencesManager
 
     override fun onCreateView(
@@ -60,6 +59,10 @@ class PremiumFragment : Fragment() {
     }
 
     private fun updateTrialInfo(textView: TextView) {
+        android.util.Log.d("PremiumFragment", "=== updateTrialInfo INICIO ===")
+        android.util.Log.d("PremiumFragment", "isPremium = ${preferencesManager.isPremium()}")
+        android.util.Log.d("PremiumFragment", "Trial days remaining = ${preferencesManager.getTrialDaysRemaining()}")
+
         val daysRemaining = preferencesManager.getTrialDaysRemaining()
 
         val message = when {
@@ -69,6 +72,7 @@ class PremiumFragment : Fragment() {
         }
 
         textView.text = message
+        android.util.Log.d("PremiumFragment", "Mensaje mostrado: $message")
     }
 
     private fun showTestPurchaseDialog() {
@@ -105,18 +109,25 @@ class PremiumFragment : Fragment() {
     }
 
     private fun setupTestingButtons(view: View) {
-        // Solo visible en modo debug para testing
-        if (mostrarBotonesTesting) {  // ← CAMBIADO: era if (true)
-            android.util.Log.d("DEBUG_PREMIUM", "Los botones deberían aparecer")
+        android.util.Log.d("PremiumFragment", "setupTestingButtons - Config.MODO_TESTING = ${Config.MODO_TESTING}")
+
+        // Solo visible en modo testing
+        if (Config.MODO_TESTING) {
+            android.util.Log.d("PremiumFragment", "ENTRANDO en modo TESTING - mostrando botones")
+
             val tvTestingLabel = view.findViewById<TextView>(R.id.tvTestingLabel)
             val btnSimulate30Days = view.findViewById<MaterialButton>(R.id.btnSimulate30Days)
             val btnResetTrial = view.findViewById<MaterialButton>(R.id.btnResetTrial)
             val btnTogglePremium = view.findViewById<MaterialButton>(R.id.btnTogglePremium)
 
-            tvTestingLabel.visibility = View.VISIBLE
-            btnSimulate30Days.visibility = View.VISIBLE
-            btnResetTrial.visibility = View.VISIBLE
-            btnTogglePremium.visibility = View.VISIBLE
+            android.util.Log.d("PremiumFragment", "btnSimulate30Days encontrado: ${btnSimulate30Days != null}")
+            android.util.Log.d("PremiumFragment", "btnResetTrial encontrado: ${btnResetTrial != null}")
+            android.util.Log.d("PremiumFragment", "btnTogglePremium encontrado: ${btnTogglePremium != null}")
+
+            tvTestingLabel?.visibility = View.VISIBLE
+            btnSimulate30Days?.visibility = View.VISIBLE
+            btnResetTrial?.visibility = View.VISIBLE
+            btnTogglePremium?.visibility = View.VISIBLE
 
             btnSimulate30Days?.setOnClickListener {
                 preferencesManager.simulateDaysPassedForTesting(30)
@@ -136,6 +147,10 @@ class PremiumFragment : Fragment() {
                 updateTrialInfo(view.findViewById(R.id.tvTrialInfo))
                 showTestMessage("Premium: ${if (newStatus) "ON" else "OFF"}")
             }
+
+            android.util.Log.d("PremiumFragment", "Botones de testing configurados")
+        } else {
+            android.util.Log.d("PremiumFragment", "Modo PRODUCCIÓN - ocultando botones de testing")
         }
     }
 

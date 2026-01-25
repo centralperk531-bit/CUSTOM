@@ -26,12 +26,13 @@ import com.google.android.gms.ads.MobileAds
 import com.google.android.material.button.MaterialButton
 import java.util.Calendar
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-import com.tusiglas.custodiaapp.AdManager
+import com.example.custodiaapp.AdManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import android.net.Uri
 import java.text.SimpleDateFormat
 import java.util.*
 import com.example.custodiaapp.BuildConfig
+import com.example.custodiaapp.Config
 
 class MainActivity : AppCompatActivity() {
 
@@ -62,8 +63,6 @@ class MainActivity : AppCompatActivity() {
     private val edtStatsStartDate by lazy { findViewById<EditText>(R.id.edtStatsStartDate) }
     private val edtStatsEndDate by lazy { findViewById<EditText>(R.id.edtStatsEndDate) }
     private val btnCalculateStats by lazy { findViewById<Button>(R.id.btnCalculateStats) }
-    private val mostrarBotonesTesting = false  // ← CAMBIA A true solo para debug
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -566,6 +565,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showPremiumDialog() {
+        android.util.Log.d("CustodiaApp", "=== showPremiumDialog INICIO ===")
+
         val dialogView = layoutInflater.inflate(R.layout.fragment_premium, null)
         val preferencesManager = PreferencesManager(this)
 
@@ -576,44 +577,82 @@ class MainActivity : AppCompatActivity() {
         // Actualizar info inicial
         updatePremiumDialogInfo(dialogView, preferencesManager)
 
-        // Botón de compra (siempre visible, muestra mensaje)
-        dialogView.findViewById<MaterialButton>(R.id.btnBuyPremium)?.setOnClickListener {
-            showMessage("🚀 El sistema de pagos estará disponible próximamente")
-        }
+        android.util.Log.d("CustodiaApp", "Config.MODO_TESTING = ${Config.MODO_TESTING}")
 
-        dialogView.findViewById<MaterialButton>(R.id.btnRestorePurchase)?.setOnClickListener {
-            showMessage("🔄 Restaurar compras estará disponible próximamente")
-        }
+        if (Config.MODO_TESTING) {
+            android.util.Log.d("CustodiaApp", "ENTRANDO en bloque MODO_TESTING")
 
-        if (mostrarBotonesTesting) {
-            // Botones de testing (ocultos en producción)
-            dialogView.findViewById<MaterialButton>(R.id.btnSimulate30Days)?.setOnClickListener {
+            // MODO TESTING: Hacer visibles y funcionales los botones de testing
+            val btn30Days = dialogView.findViewById<MaterialButton>(R.id.btnSimulate30Days)
+            val btnReset = dialogView.findViewById<MaterialButton>(R.id.btnResetTrial)
+            val btnToggle = dialogView.findViewById<MaterialButton>(R.id.btnTogglePremium)
+
+            android.util.Log.d("CustodiaApp", "btn30Days encontrado: ${btn30Days != null}")
+            android.util.Log.d("CustodiaApp", "btnReset encontrado: ${btnReset != null}")
+            android.util.Log.d("CustodiaApp", "btnToggle encontrado: ${btnToggle != null}")
+
+            btn30Days?.visibility = View.VISIBLE
+            btnReset?.visibility = View.VISIBLE
+            btnToggle?.visibility = View.VISIBLE
+
+            android.util.Log.d("CustodiaApp", "Visibilidad establecida a VISIBLE")
+
+            // Botones principales en modo testing
+            dialogView.findViewById<MaterialButton>(R.id.btnBuyPremium)?.setOnClickListener {
+                preferencesManager.setPremium(true)
+                dialog.dismiss()
+                showMessage("✅ Premium activado (testing)")
+            }
+
+            dialogView.findViewById<MaterialButton>(R.id.btnRestorePurchase)?.setOnClickListener {
+                showMessage("🔄 Restaurar compras estará disponible próximamente")
+            }
+
+            // Botones de testing
+            btn30Days?.setOnClickListener {
                 preferencesManager.simulateDaysPassedForTesting(30)
                 updatePremiumDialogInfo(dialogView, preferencesManager)
                 showMessage("⏱️ Simulados 30 días pasados")
             }
 
-            dialogView.findViewById<MaterialButton>(R.id.btnResetTrial)?.setOnClickListener {
+            btnReset?.setOnClickListener {
                 preferencesManager.resetInstallDateForTesting()
                 updatePremiumDialogInfo(dialogView, preferencesManager)
                 showMessage("🔄 Periodo reseteado a 30 días")
             }
 
-            dialogView.findViewById<MaterialButton>(R.id.btnTogglePremium)?.setOnClickListener {
+            btnToggle?.setOnClickListener {
                 val newStatus = !preferencesManager.isPremium()
                 preferencesManager.setPremium(newStatus)
                 updatePremiumDialogInfo(dialogView, preferencesManager)
                 showMessage("⭐ Premium: ${if (newStatus) "ACTIVADO" else "DESACTIVADO"}")
             }
+
+            android.util.Log.d("CustodiaApp", "Listeners asignados")
         } else {
+            android.util.Log.d("CustodiaApp", "ENTRANDO en bloque PRODUCCIÓN")
+
+            // MODO PRODUCCIÓN: Botones de compra solo muestran mensaje
+            dialogView.findViewById<MaterialButton>(R.id.btnBuyPremium)?.setOnClickListener {
+                showMessage("🚀 El sistema de pagos estará disponible próximamente")
+            }
+
+            dialogView.findViewById<MaterialButton>(R.id.btnRestorePurchase)?.setOnClickListener {
+                showMessage("🔄 Restaurar compras estará disponible próximamente")
+            }
+
             // Ocultar botones de testing en producción
             dialogView.findViewById<MaterialButton>(R.id.btnSimulate30Days)?.visibility = View.GONE
             dialogView.findViewById<MaterialButton>(R.id.btnResetTrial)?.visibility = View.GONE
             dialogView.findViewById<MaterialButton>(R.id.btnTogglePremium)?.visibility = View.GONE
         }
 
+        android.util.Log.d("CustodiaApp", "Mostrando diálogo")
         dialog.show()
+        android.util.Log.d("CustodiaApp", "=== showPremiumDialog FIN ===")
     }
+
+
 
 
     private fun updatePremiumDialogInfo(view: View, prefs: PreferencesManager) {
