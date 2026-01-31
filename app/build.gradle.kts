@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.custodiaapp"
+    namespace = "com.ismaelcr.custodiaapp"
     signingConfigs {
         create("release") {
             storeFile = file("custodiaapp-keystore.jks")
@@ -13,14 +13,14 @@ android {
             keyPassword = "Sml.4791.ICR"
         }
     }
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.custodiaapp"
+        applicationId = "com.ismaelcr.custodiaapp"
         minSdk = 26
-        targetSdk = 34
-        versionCode = 2
-        versionName = "1.0"
+        targetSdk = 35
+        versionCode = 4
+        versionName = "4.0.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
