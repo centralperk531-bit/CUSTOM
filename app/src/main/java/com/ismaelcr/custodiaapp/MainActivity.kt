@@ -291,15 +291,8 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnSaveConfig).setOnClickListener { saveConfiguration() }
         findViewById<Button>(R.id.btnManageSpecialDates).setOnClickListener { showSpecialDatesManager() }
         findViewById<Button>(R.id.btnPremium).setOnClickListener {
-            findViewById<View>(R.id.tabCalendar).visibility = View.GONE
-            findViewById<View>(R.id.tabSearch).visibility = View.GONE
-            findViewById<View>(R.id.tabStats).visibility = View.GONE
-            findViewById<View>(R.id.tabConfig).visibility = View.GONE
-
-            supportFragmentManager.beginTransaction()
-                .replace(R.id.tabContentContainer, PremiumFragment())
-                .addToBackStack(null)
-                .commit()
+            // Esto es lo único que debe haber ahora:
+            billingManager.launchPurchaseFlow()
         }
 
         findViewById<Button>(R.id.btnManagePatternChanges).setOnClickListener {
