@@ -19,6 +19,9 @@ class PreferencesManager(context: Context) {
         private const val KEY_START_WITH_PARENT = "startWithParent"
         private const val KEY_WEEKDAYS_PARENT = "weekdaysParent"
         private const val KEY_WEEKENDS_PARENT = "weekendsParent"
+        private const val KEY_WEEKEND_MODE = "weekendMode"
+        private const val KEY_FIXED_WEEKENDS_PARENT = "fixedWeekendsParent"
+        private const val KEY_START_WEEKEND_WITH_PARENT = "startWeekendWithParent"
         private const val KEY_CUSTOM_DAYS_PARENT1 = "customDaysParent1"
         private const val KEY_CUSTOM_DAYS_PARENT2 = "customDaysParent2"
         private const val KEY_CUSTOM_START_WITH_PARENT = "customStartWithParent"
@@ -98,7 +101,9 @@ class PreferencesManager(context: Context) {
                 is AlternateDays -> putInt(KEY_START_WITH_PARENT, pattern.startWithParent)
                 is WeekdaysWeekends -> {
                     putInt(KEY_WEEKDAYS_PARENT, pattern.weekdaysParent)
-                    putInt(KEY_WEEKENDS_PARENT, pattern.weekendsParent)
+                    putString(KEY_WEEKEND_MODE, pattern.weekendMode.name)
+                    putInt(KEY_FIXED_WEEKENDS_PARENT, pattern.fixedWeekendsParent)
+                    putInt(KEY_START_WEEKEND_WITH_PARENT, pattern.startWeekendWithParent)
                 }
                 is CustomDaysPattern -> {
                     putInt(KEY_CUSTOM_DAYS_PARENT1, pattern.daysForParent1)
@@ -136,7 +141,9 @@ class PreferencesManager(context: Context) {
                 is AlternateDays -> editor.putInt("${prefix}startWithParent", p.startWithParent)
                 is WeekdaysWeekends -> {
                     editor.putInt("${prefix}weekdaysParent", p.weekdaysParent)
-                    editor.putInt("${prefix}weekendsParent", p.weekendsParent)
+                    editor.putString("${prefix}weekendMode", p.weekendMode.name)
+                    editor.putInt("${prefix}fixedWeekendsParent", p.fixedWeekendsParent)
+                    editor.putInt("${prefix}startWeekendWithParent", p.startWeekendWithParent)
                 }
                 is CustomDaysPattern -> {
                     editor.putInt("${prefix}customDaysParent1", p.daysForParent1)
@@ -230,7 +237,11 @@ class PreferencesManager(context: Context) {
         val patternPos = prefs.getInt(KEY_CUSTODY_PATTERN_POSITION, 0)
         val startWithParent = prefs.getInt(KEY_START_WITH_PARENT, 1)
         val weekdaysParent = prefs.getInt(KEY_WEEKDAYS_PARENT, 1)
-        val weekendsParent = prefs.getInt(KEY_WEEKENDS_PARENT, 2)
+        val weekendMode = parseEnumSafely<WeekendMode>(
+            prefs.getString(KEY_WEEKEND_MODE, WeekendMode.FIXED.name)
+        ) ?: WeekendMode.FIXED
+        val fixedWeekendsParent = prefs.getInt(KEY_FIXED_WEEKENDS_PARENT, 2)
+        val startWeekendWithParent = prefs.getInt(KEY_START_WEEKEND_WITH_PARENT, 1)
         val customDaysParent1 = prefs.getInt(KEY_CUSTOM_DAYS_PARENT1, 7)
         val customDaysParent2 = prefs.getInt(KEY_CUSTOM_DAYS_PARENT2, 7)
         val customStartWithParent = prefs.getInt(KEY_CUSTOM_START_WITH_PARENT, 1)
@@ -240,7 +251,9 @@ class PreferencesManager(context: Context) {
             1 -> AlternateDays(startWithParent = startWithParent)
             2 -> WeekdaysWeekends(
                 weekdaysParent = weekdaysParent,
-                weekendsParent = weekendsParent
+                weekendMode = weekendMode,
+                fixedWeekendsParent = fixedWeekendsParent,
+                startWeekendWithParent = startWeekendWithParent
             )
             3 -> CustomDaysPattern(
                 daysForParent1 = customDaysParent1,
@@ -276,7 +289,11 @@ class PreferencesManager(context: Context) {
                     1 -> AlternateDays(startWithParent = prefs.getInt("${prefix}startWithParent", 1))
                     2 -> WeekdaysWeekends(
                         weekdaysParent = prefs.getInt("${prefix}weekdaysParent", 1),
-                        weekendsParent = prefs.getInt("${prefix}weekendsParent", 2)
+                        weekendMode = parseEnumSafely<WeekendMode>(
+                            prefs.getString("${prefix}weekendMode", WeekendMode.FIXED.name)
+                        ) ?: WeekendMode.FIXED,
+                        fixedWeekendsParent = prefs.getInt("${prefix}fixedWeekendsParent", 2),
+                        startWeekendWithParent = prefs.getInt("${prefix}startWeekendWithParent", 1)
                     )
                     3 -> CustomDaysPattern(
                         daysForParent1 = prefs.getInt("${prefix}customDaysParent1", 7),

@@ -6,6 +6,13 @@ import java.time.DayOfWeek
 import java.time.temporal.ChronoUnit
 import java.time.temporal.TemporalAdjusters
 
+enum class WeekendMode {
+    FIXED,           // Fines de semana fijos (siempre el mismo padre)
+    ALTERNATE,       // Fines de semana alternos (se alternan cada semana)
+    ONE_OF_THREE,    // 1 de cada 3 fines de semana
+    ONE_OF_FOUR      // 1 de cada 4 fines de semana
+}
+
 // Clase base para patrones de custodia
 sealed class CustodyPattern {
     abstract val name: String
@@ -94,15 +101,71 @@ data class AlternateDays(
 // Patrón de entre semana/fines de semana
 data class WeekdaysWeekends(
     override val name: String = "Entre Semana / Fines de Semana",
-    override val description: String = "Un padre tiene entre semana, otro los fines de semana",
+    override val description: String = "Un padre tiene entre semana, fines de semana configurables",
     val weekdaysParent: Int = 1,
-    val weekendsParent: Int = 2
+    val weekendMode: WeekendMode = WeekendMode.FIXED,
+    val fixedWeekendsParent: Int = 2,
+    val startWeekendWithParent: Int = 1
 ) : CustodyPattern() {
 
     override fun getParentForDate(date: LocalDate, startDate: LocalDate, changeDayOfWeek: Int): Int {
-        return when (date.dayOfWeek) {
-            DayOfWeek.SATURDAY, DayOfWeek.SUNDAY -> weekendsParent
-            else -> weekdaysParent
+        // Si es entre semana (lunes a viernes)
+        if (date.dayOfWeek !in listOf(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY)) {
+            return weekdaysParent
+        }
+
+        // Si es fin de semana, depende del modo
+        return when (weekendMode) {
+            WeekendMode.FIXED -> {
+                // Siempre el mismo padre
+                fixedWeekendsParent
+            }
+
+            WeekendMode.ALTERNATE -> {
+                // Alternar cada semana
+                val adjustedStartDate = startDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.SATURDAY))
+                val adjustedDate = date.with(TemporalAdjusters.previousOrSame(DayOfWeek.SATURDAY))
+                val weeksSinceStart = ChronoUnit.WEEKS.between(adjustedStartDate, adjustedDate)
+
+                if (DEBUG) {
+                    Log.d(TAG, "WeekdaysWeekends ALTERNATE - Fecha: $date | Semanas: $weeksSinceStart")
+                }
+
+                val weekOffset = Math.floorMod(weeksSinceStart, 2L).toInt()
+                if (weekOffset == 0) startWeekendWithParent else if (startWeekendWithParent == 1) 2 else 1
+            }
+
+            WeekendMode.ONE_OF_THREE -> {
+                // Ciclo de 3 semanas: 2 para uno, 1 para el otro
+                val adjustedStartDate = startDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.SATURDAY))
+                val adjustedDate = date.with(TemporalAdjusters.previousOrSame(DayOfWeek.SATURDAY))
+                val weeksSinceStart = ChronoUnit.WEEKS.between(adjustedStartDate, adjustedDate)
+
+                val positionInCycle = Math.floorMod(weeksSinceStart, 3L).toInt()
+
+                if (DEBUG) {
+                    Log.d(TAG, "WeekdaysWeekends ONE_OF_THREE - Fecha: $date | Semanas: $weeksSinceStart | Pos: $positionInCycle")
+                }
+
+                // Ciclo: startWith, startWith, otro
+                if (positionInCycle < 2) startWeekendWithParent else if (startWeekendWithParent == 1) 2 else 1
+            }
+
+            WeekendMode.ONE_OF_FOUR -> {
+                // Ciclo de 4 semanas: 3 para uno, 1 para el otro
+                val adjustedStartDate = startDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.SATURDAY))
+                val adjustedDate = date.with(TemporalAdjusters.previousOrSame(DayOfWeek.SATURDAY))
+                val weeksSinceStart = ChronoUnit.WEEKS.between(adjustedStartDate, adjustedDate)
+
+                val positionInCycle = Math.floorMod(weeksSinceStart, 4L).toInt()
+
+                if (DEBUG) {
+                    Log.d(TAG, "WeekdaysWeekends ONE_OF_FOUR - Fecha: $date | Semanas: $weeksSinceStart | Pos: $positionInCycle")
+                }
+
+                // Ciclo: startWith, startWith, startWith, otro
+                if (positionInCycle < 3) startWeekendWithParent else if (startWeekendWithParent == 1) 2 else 1
+            }
         }
     }
 }

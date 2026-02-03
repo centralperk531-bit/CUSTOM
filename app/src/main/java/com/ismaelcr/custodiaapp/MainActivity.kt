@@ -337,7 +337,7 @@ class MainActivity : AppCompatActivity() {
             when(pos) {
                 0 -> viewModel.custodyPattern = AlternateWeeks(startWithParent = 1)
                 1 -> viewModel.custodyPattern = AlternateDays(startWithParent = 1)
-                2 -> viewModel.custodyPattern = WeekdaysWeekends(weekdaysParent = 1, weekendsParent = 2)
+                2 -> showWeekendModeDialog()
                 3 -> {
                     // Mostrar diálogo de configuración personalizada
                     showCustomPatternDialog()
@@ -1515,7 +1515,9 @@ class MainActivity : AppCompatActivity() {
                         1 -> AlternateDays(startWithParent = if (spinnerStarts.selectedItemPosition == 0) 1 else 2)
                         2 -> WeekdaysWeekends(
                             weekdaysParent = if (spinnerStarts.selectedItemPosition == 0) 1 else 2,
-                            weekendsParent = if (spinnerStarts.selectedItemPosition == 0) 2 else 1
+                            weekendMode = WeekendMode.FIXED,
+                            fixedWeekendsParent = if (spinnerStarts.selectedItemPosition == 0) 2 else 1,
+                            startWeekendWithParent = if (spinnerStarts.selectedItemPosition == 0) 1 else 2
                         )
                         else -> AlternateWeeks(startWithParent = 1)
                     }
@@ -2044,6 +2046,94 @@ class MainActivity : AppCompatActivity() {
                 }
                 dialog.dismiss()
             }
+            .show()
+    }
+    private fun showWeekendModeDialog() {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_weekend_mode, null)
+
+        val spinnerWeekdaysParent = dialogView.findViewById<Spinner>(R.id.spinnerWeekdaysParent)
+        val radioGroup = dialogView.findViewById<RadioGroup>(R.id.radioGroupWeekendMode)
+        val radioFixed = dialogView.findViewById<RadioButton>(R.id.radioWeekendFixed)
+        val radioAlternate = dialogView.findViewById<RadioButton>(R.id.radioWeekendAlternate)
+        val radioOneOfThree = dialogView.findViewById<RadioButton>(R.id.radioWeekendOneOfThree)
+        val radioOneOfFour = dialogView.findViewById<RadioButton>(R.id.radioWeekendOneOfFour)
+        val spinnerFixedParent = dialogView.findViewById<Spinner>(R.id.spinnerFixedWeekendsParent)
+        val spinnerStartWeekend = dialogView.findViewById<Spinner>(R.id.spinnerStartWeekendWith)
+        val layoutFixed = dialogView.findViewById<View>(R.id.layoutFixedOptions)
+        val layoutAlternate = dialogView.findViewById<View>(R.id.layoutAlternateOptions)
+
+        // Configurar spinners
+        val parents = arrayOf(viewModel.parent1Name, viewModel.parent2Name)
+        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, parents)
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+
+        spinnerWeekdaysParent.adapter = adapter
+        spinnerFixedParent.adapter = adapter
+        spinnerStartWeekend.adapter = adapter
+
+        // Cargar valores actuales si existe el patrón
+        val currentPattern = viewModel.custodyPattern
+        if (currentPattern is WeekdaysWeekends) {
+            spinnerWeekdaysParent.setSelection(if (currentPattern.weekdaysParent == 1) 0 else 1)
+
+            when (currentPattern.weekendMode) {
+                WeekendMode.FIXED -> radioFixed.isChecked = true
+                WeekendMode.ALTERNATE -> radioAlternate.isChecked = true
+                WeekendMode.ONE_OF_THREE -> radioOneOfThree.isChecked = true
+                WeekendMode.ONE_OF_FOUR -> radioOneOfFour.isChecked = true
+            }
+
+            spinnerFixedParent.setSelection(if (currentPattern.fixedWeekendsParent == 1) 0 else 1)
+            spinnerStartWeekend.setSelection(if (currentPattern.startWeekendWithParent == 1) 0 else 1)
+        } else {
+            radioFixed.isChecked = true
+        }
+
+        // Mostrar/ocultar opciones según el modo seleccionado
+        fun updateVisibility() {
+            when {
+                radioFixed.isChecked -> {
+                    layoutFixed.visibility = View.VISIBLE
+                    layoutAlternate.visibility = View.GONE
+                }
+                else -> {
+                    layoutFixed.visibility = View.GONE
+                    layoutAlternate.visibility = View.VISIBLE
+                }
+            }
+        }
+
+        radioGroup.setOnCheckedChangeListener { _, _ -> updateVisibility() }
+        updateVisibility()
+
+        AlertDialog.Builder(this)
+            .setTitle("Configurar Entre Semana / Fines de Semana")
+            .setView(dialogView)
+            .setPositiveButton("Guardar") { dialog, _ ->
+                val weekdaysParent = if (spinnerWeekdaysParent.selectedItemPosition == 0) 1 else 2
+
+                val weekendMode = when {
+                    radioFixed.isChecked -> WeekendMode.FIXED
+                    radioAlternate.isChecked -> WeekendMode.ALTERNATE
+                    radioOneOfThree.isChecked -> WeekendMode.ONE_OF_THREE
+                    radioOneOfFour.isChecked -> WeekendMode.ONE_OF_FOUR
+                    else -> WeekendMode.FIXED
+                }
+
+                val fixedWeekendsParent = if (spinnerFixedParent.selectedItemPosition == 0) 1 else 2
+                val startWeekendWithParent = if (spinnerStartWeekend.selectedItemPosition == 0) 1 else 2
+
+                viewModel.custodyPattern = WeekdaysWeekends(
+                    weekdaysParent = weekdaysParent,
+                    weekendMode = weekendMode,
+                    fixedWeekendsParent = fixedWeekendsParent,
+                    startWeekendWithParent = startWeekendWithParent
+                )
+
+                updateDisplay()
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancelar", null)
             .show()
     }
     // ============= EXPORTACIÓN A PDF =============

@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Configurar Entre Semana / Fines de Semana"
+            android:textStyle="bold"
+            android:textSize="18sp"
+            android:layout_marginBottom="16dp"/>
+
+        <!-- Padre entre semana -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="¿Quién tiene la custodia entre semana (Lunes-Viernes)?"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp"/>
+
+        <Spinner
+            android:id="@+id/spinnerWeekdaysParent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"/>
+
+        <!-- Modo de fines de semana -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="¿Cómo se reparten los fines de semana?"
+            android:textStyle="bold"
+            android:layout_marginBottom="12dp"/>
+
+        <RadioGroup
+            android:id="@+id/radioGroupWeekendMode"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp">
+
+            <RadioButton
+                android:id="@+id/radioWeekendFixed"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Fijos (siempre el mismo padre)"
+                android:padding="8dp"/>
+
+            <RadioButton
+                android:id="@+id/radioWeekendAlternate"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Alternos (se turnan cada semana 50/50)"
+                android:padding="8dp"/>
+
+            <RadioButton
+                android:id="@+id/radioWeekendOneOfThree"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="1 de cada 3 (2 fines para uno, 1 para el otro)"
+                android:padding="8dp"/>
+
+            <RadioButton
+                android:id="@+id/radioWeekendOneOfFour"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="1 de cada 4 (3 fines para uno, 1 para el otro)"
+                android:padding="8dp"/>
+
+        </RadioGroup>
+
+        <!-- Opciones para modo FIJO -->
+        <LinearLayout
+            android:id="@+id/layoutFixedOptions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            android:background="#F0F0F0"
+            android:padding="12dp"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="¿Quién tiene SIEMPRE los fines de semana?"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp"/>
+
+            <Spinner
+                android:id="@+id/spinnerFixedWeekendsParent"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+
+        </LinearLayout>
+
+        <!-- Opciones para modos ALTERNOS/1DE3/1DE4 -->
+        <LinearLayout
+            android:id="@+id/layoutAlternateOptions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            android:background="#F0F0F0"
+            android:padding="12dp"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="¿Con quién comienza el PRIMER fin de semana?"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp"/>
+
+            <Spinner
+                android:id="@+id/spinnerStartWeekendWith"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="💡 A partir de la fecha de inicio configurada, los fines de semana se repartirán según el patrón seleccionado."
+                android:textSize="12sp"
+                android:layout_marginTop="8dp"
+                android:textColor="#666"/>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</ScrollView>
