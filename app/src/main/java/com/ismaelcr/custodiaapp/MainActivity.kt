@@ -35,8 +35,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var preferencesManager: PreferencesManager
     private lateinit var calendarAdapter: CalendarPagerAdapter
     private lateinit var adManager: AdManager
-    private lateinit var billingManager: BillingManager
-
+    lateinit var billingManager: BillingManager
     private val custodyCalculator by lazy { CustodyCalculator(viewModel) }
     private val calendarRenderer by lazy { CalendarRenderer(viewModel) }
     private val rangeSelectionManager = RangeSelectionManager()
@@ -84,8 +83,10 @@ class MainActivity : AppCompatActivity() {
             activity = this,
             preferencesManager = preferencesManager,
             onPurchaseSuccess = {
-                Toast.makeText(this, "¡Premium activado! 🎉", Toast.LENGTH_LONG).show()
-                recreate()
+                Toast.makeText(this, "¡Premium activado!", Toast.LENGTH_LONG).show()
+
+                // Buscamos el botón y lo ocultamos para que no pueda volver a pulsarlo
+                findViewById<Button>(R.id.btnPremium).visibility = View.GONE
             },
             onPurchaseError = { error ->
                 Toast.makeText(this, "Error: $error", Toast.LENGTH_LONG).show()
@@ -292,7 +293,7 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnManageSpecialDates).setOnClickListener { showSpecialDatesManager() }
         findViewById<Button>(R.id.btnPremium).setOnClickListener {
             // Esto es lo único que debe haber ahora:
-            billingManager.launchPurchaseFlow()
+            billingManager.launchPurchaseFlow(this)
         }
 
         findViewById<Button>(R.id.btnManagePatternChanges).setOnClickListener {
@@ -620,13 +621,16 @@ class MainActivity : AppCompatActivity() {
         } else {
             android.util.Log.d("CustodiaApp", "ENTRANDO en bloque PRODUCCIÓN")
 
-            // MODO PRODUCCIÓN: Botones de compra solo muestran mensaje
+            // MODO PRODUCCIÓN REAL: Conectado con Google Play
             dialogView.findViewById<MaterialButton>(R.id.btnBuyPremium)?.setOnClickListener {
-                showMessage("🚀 El sistema de pagos estará disponible próximamente")
+                dialog.dismiss() // Cerramos el diálogo para que se vea la ventana de Google Play
+                realizarCompraPremium()
             }
 
             dialogView.findViewById<MaterialButton>(R.id.btnRestorePurchase)?.setOnClickListener {
-                showMessage("🔄 Restaurar compras estará disponible próximamente")
+                // Esto consulta a Google si el usuario ya pagó antes
+                billingManager?.queryPurchases()
+                showMessage("Consultando compras anteriores...")
             }
 
             // Ocultar botones de testing en producción
@@ -2430,10 +2434,6 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
         billingManager.endConnection()
     }
-
-    fun getBillingManager(): BillingManager {
-        return billingManager
-    }
     private fun handleSaveBackup() {
         // Verificar Premium
         if (!preferencesManager.isPremium()) {
@@ -2574,12 +2574,17 @@ class MainActivity : AppCompatActivity() {
 
         if (result.isSuccess) {
             MaterialAlertDialogBuilder(this)
-                .setTitle("✅ Backup restaurado")
-                .setMessage("La configuración se ha restaurado correctamente.\n\nLa app se reiniciará para aplicar los cambios.")
-                .setPositiveButton("Reiniciar") { _, _ ->
-                    recreate() // Reinicia la actividad
+                .setTitle("✅ Configuración lista")
+                .setMessage("El backup se ha restaurado correctamente.")
+                .setPositiveButton("Aceptar") { dialog, _ ->
+                    // Simplemente cerramos el diálogo
+                    dialog.dismiss()
+
+                    // Si necesitas que algo cambie visualmente, hazlo aquí directamente
+                    // Ejemplo: actualizar un texto o esconder el botón premium
+                    findViewById<Button>(R.id.btnPremium)?.visibility = View.GONE
                 }
-                .setCancelable(false)
+                .setCancelable(true)
                 .show()
         } else {
             MaterialAlertDialogBuilder(this)
@@ -2593,5 +2598,11 @@ class MainActivity : AppCompatActivity() {
     companion object {
         private const val REQUEST_CODE_SAVE_BACKUP = 1000
         private const val REQUEST_CODE_RESTORE_BACKUP = 1001
+    }
+    // Esta función es como un "puerta" que cualquiera puede usar
+    fun realizarCompraPremium() {
+        if (::billingManager.isInitialized) {
+            billingManager.launchPurchaseFlow(this)
+        }
     }
 }

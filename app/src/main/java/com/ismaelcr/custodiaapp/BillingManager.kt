@@ -82,7 +82,7 @@ class BillingManager(
     }
 
     // Iniciar flujo de compra (2,49€)
-    fun launchPurchaseFlow() {
+    fun launchPurchaseFlow(activity: Activity) {
         val productList = listOf(
             QueryProductDetailsParams.Product.newBuilder()
                 .setProductId(productId)

@@ -40,13 +40,8 @@ class PremiumFragment : Fragment() {
         // Mostrar días restantes
         updateTrialInfo(tvTrialInfo)
 
-        // Por ahora, botones de prueba
         btnBuyPremium.setOnClickListener {
-            MaterialAlertDialogBuilder(requireContext())
-                .setTitle("Próximamente")
-                .setMessage("El sistema de pagos estará disponible próximamente. Por ahora puedes probar todas las funciones Premium de forma gratuita durante 30 días.")
-                .setPositiveButton("Entendido", null)
-                .show()
+            (activity as? MainActivity)?.realizarCompraPremium()
         }
 
         btnRestorePurchase.setOnClickListener {
@@ -77,19 +72,19 @@ class PremiumFragment : Fragment() {
 
     private fun showTestPurchaseDialog() {
         // Obtener billingManager desde MainActivity
-        val billingManager = (requireActivity() as MainActivity).getBillingManager()
+        (activity as? MainActivity)?.realizarCompraPremium()
 
         // Lanzar flujo de compra real de Google Play
-        billingManager.launchPurchaseFlow()
+        (activity as? MainActivity)?.realizarCompraPremium()
     }
 
 
     private fun showRestoreDialog() {
         // Obtener billingManager desde MainActivity
-        val billingManager = (requireActivity() as MainActivity).getBillingManager()
+        (activity as? MainActivity)?.realizarCompraPremium()
 
         // Verificar compras existentes en Google Play
-        billingManager.queryPurchases()
+        (activity as? MainActivity)?.billingManager?.queryPurchases()
 
         MaterialAlertDialogBuilder(requireContext())
             .setTitle("Restaurando compra...")
