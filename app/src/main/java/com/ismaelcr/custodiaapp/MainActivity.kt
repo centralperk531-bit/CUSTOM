@@ -629,7 +629,7 @@ class MainActivity : AppCompatActivity() {
 
             dialogView.findViewById<MaterialButton>(R.id.btnRestorePurchase)?.setOnClickListener {
                 // Esto consulta a Google si el usuario ya pagó antes
-                billingManager?.queryPurchases()
+                billingManager.queryPurchases()
                 showMessage("Consultando compras anteriores...")
             }
 
@@ -666,7 +666,7 @@ class MainActivity : AppCompatActivity() {
 
 
     // ============= GESTIÓN DE FECHAS DESDE CALENDARIO =============
-    fun showDatePickerForContextMenu(date: LocalDate, onDateConfigured: () -> Unit) {
+    fun showDatePickerForContextMenu(date: LocalDate) {
         if (!rangeSelectionManager.isSelecting) {
             // Primera selección: marcar inicio
             rangeSelectionManager.startSelection(date)
@@ -1746,10 +1746,10 @@ class MainActivity : AppCompatActivity() {
             if (applicableChange != null) {
                 // HAY CAMBIO - usar sus parámetros
                 val effectivePattern = when (applicableChange.pattern) {
-                    is AlternateWeeks -> (applicableChange.pattern as AlternateWeeks).copy(
+                    is AlternateWeeks -> (applicableChange.pattern).copy(
                         startWithParent = applicableChange.startsWithParent
                     )
-                    is AlternateDays -> (applicableChange.pattern as AlternateDays).copy(
+                    is AlternateDays -> (applicableChange.pattern).copy(
                         startWithParent = applicableChange.startsWithParent
                     )
                     else -> applicableChange.pattern
@@ -1928,7 +1928,7 @@ class MainActivity : AppCompatActivity() {
             val noDetails = mutableMapOf<String, Int>()
 
             // Contadores de eventos incluidos
-            var patternChangesCount = 0
+            var patternChangesCount: Int
             var specialDatesCount = 0
             var summerEventsCount = 0
             var noCustodyPeriodsCount = 0
@@ -2404,7 +2404,7 @@ class MainActivity : AppCompatActivity() {
     private fun showPremiumRequiredDialog() {
         MaterialAlertDialogBuilder(this)
             .setTitle("⭐ Función Premium")
-            .setMessage("La exportación a PDF es una función exclusiva de la versión Premium.\n\n¿Deseas desbloquear todas las funciones Premium?")
+            .setMessage("Esta es una función exclusiva de la versión Premium.\n\n¿Deseas desbloquear todas las funciones Premium?")
             .setPositiveButton("Ver Premium") { _, _ ->
                 showPremiumDialog()
             }
@@ -2574,22 +2574,21 @@ class MainActivity : AppCompatActivity() {
 
         if (result.isSuccess) {
             MaterialAlertDialogBuilder(this)
-                .setTitle("✅ Configuración lista")
-                .setMessage("El backup se ha restaurado correctamente.")
-                .setPositiveButton("Aceptar") { dialog, _ ->
-                    // Simplemente cerramos el diálogo
-                    dialog.dismiss()
+                .setTitle("✅ Backup Restaurado")
+                .setMessage("El backup se ha restaurado correctamente.\n\nLa aplicación se reiniciará para aplicar los cambios.")
+                .setCancelable(false)
+                .setPositiveButton("Reiniciar ahora") { _, _ ->
+                    // Recargar configuración en el viewModel
+                    preferencesManager.loadConfiguration(viewModel)
 
-                    // Si necesitas que algo cambie visualmente, hazlo aquí directamente
-                    // Ejemplo: actualizar un texto o esconder el botón premium
-                    findViewById<Button>(R.id.btnPremium)?.visibility = View.GONE
+                    // Reiniciar la Activity para refrescar toda la UI
+                    recreate()
                 }
-                .setCancelable(true)
                 .show()
         } else {
             MaterialAlertDialogBuilder(this)
-                .setTitle("❌ Error")
-                .setMessage("No se pudo restaurar el backup:\n${result.exceptionOrNull()?.message}")
+                .setTitle("❌ Error al Restaurar")
+                .setMessage("No se pudo restaurar el backup:\n\n${result.exceptionOrNull()?.message}")
                 .setPositiveButton("OK", null)
                 .show()
         }

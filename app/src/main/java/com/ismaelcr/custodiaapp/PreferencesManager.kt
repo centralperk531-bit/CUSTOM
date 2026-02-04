@@ -281,10 +281,10 @@ class PreferencesManager(context: Context) {
         for (i in 0 until count) {
             try {
                 val prefix = "patternChange_${i}_"
-                parseLocalDateSafely(prefs.getString("${prefix}startDate", null))
+                val startDate = parseLocalDateSafely(prefs.getString("${prefix}startDate", null))
                 val patternType = prefs.getInt("${prefix}patternType", 0)
 
-                when (patternType) {
+                val pattern = when (patternType) {
                     0 -> AlternateWeeks(startWithParent = prefs.getInt("${prefix}startWithParent", 1))
                     1 -> AlternateDays(startWithParent = prefs.getInt("${prefix}startWithParent", 1))
                     2 -> WeekdaysWeekends(
@@ -303,8 +303,22 @@ class PreferencesManager(context: Context) {
                     else -> null
                 }
 
-                // Aquí necesitarías crear el objeto PatternChange apropiado
-                // viewModel.patternChanges.add(PatternChange(...))
+                // ESTO FALTABA: Crear y añadir el PatternChange
+                if (pattern != null) {
+                    val changeDayOfWeek = prefs.getInt("${prefix}changeDayOfWeek", 1)
+                    val startsWithParent = prefs.getInt("${prefix}startsWithParent", 1)
+                    val description = prefs.getString("${prefix}description", "") ?: ""
+
+                    val patternChange = MainActivity.PatternChange(
+                        startDate = startDate,
+                        pattern = pattern,
+                        changeDayOfWeek = changeDayOfWeek,
+                        startsWithParent = startsWithParent,
+                        description = description
+                    )
+
+                    viewModel.patternChanges.add(patternChange)
+                }
             } catch (e: Exception) {
                 Log.e(TAG, "Error loading pattern change $i", e)
             }

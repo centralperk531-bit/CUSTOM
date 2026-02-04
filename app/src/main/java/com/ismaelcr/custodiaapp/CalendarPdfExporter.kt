@@ -195,8 +195,6 @@ class CalendarPdfExporter(
             monthsToInclude.forEach { yearMonth ->
                 val monthCell = createMonthTable(
                     yearMonth,
-                    parent1Name,
-                    parent2Name,
                     custodyCalculator,
                     startDate,
                     endDate
@@ -268,8 +266,6 @@ class CalendarPdfExporter(
 
     private fun createMonthTable(
         yearMonth: YearMonth,
-        _parent1Name: String,
-        _parent2Name: String,
         custodyCalculator: MainActivity.CustodyCalculator,
         rangeStart: LocalDate? = null,
         rangeEnd: LocalDate? = null

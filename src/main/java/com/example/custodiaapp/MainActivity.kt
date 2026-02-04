@@ -1126,14 +1126,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     // ============= GESTIÓN DE CAMBIOS DE PATRÓN =============
-
-    data class PatternChange(
+    /*data class PatternChange(
         val startDate: LocalDate,
         val pattern: CustodyPattern,
         val changeDayOfWeek: Int,
         val startsWithParent: Int,
         val description: String = ""
-    )
+    )*/
 
     private fun showPatternChangesManager() {
         val totalChanges = viewModel.patternChanges.size
