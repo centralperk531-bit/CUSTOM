@@ -77,6 +77,17 @@
                     app:icon="@android:drawable/ic_menu_save"
                     app:backgroundTint="#5E5240" />
 
+                <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+                    android:id="@+id/btnSaveConfigCalendar"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="bottom|start"
+                    android:layout_margin="16dp"
+                    android:text="@string/btn_save"
+                    android:textSize="16sp"
+                    app:cornerRadius="8dp"
+                    app:icon="@android:drawable/ic_menu_save"/>
+
             </FrameLayout>
 
         </LinearLayout>

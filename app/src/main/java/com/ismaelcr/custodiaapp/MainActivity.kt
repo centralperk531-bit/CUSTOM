@@ -290,6 +290,9 @@ class MainActivity : AppCompatActivity() {
 
         findViewById<Button>(R.id.btnSearch).setOnClickListener { searchCustody() }
         findViewById<Button>(R.id.btnSaveConfig).setOnClickListener { saveConfiguration() }
+        findViewById<View>(R.id.btnSaveConfigCalendar).setOnClickListener {
+            saveConfiguration()
+        }
         findViewById<Button>(R.id.btnManageSpecialDates).setOnClickListener { showSpecialDatesManager() }
         findViewById<Button>(R.id.btnPremium).setOnClickListener {
             // Esto es lo único que debe haber ahora:
