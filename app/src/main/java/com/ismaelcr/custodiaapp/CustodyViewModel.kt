@@ -14,21 +14,28 @@ class CustodyViewModel : ViewModel() {
 
     // NUEVA LÓGICA: Configuración de fecha de inicio del patrón
     var startDate: LocalDate = LocalDate.now()
-    var patternStartsWithParent: Int = 1  // 1 = Parent1, 2 = Parent2
-    var patternApplicationMode: String = "FORWARD"  // "FORWARD" o "FROM_DATE"
-    var changeDayOfWeek: Int = 1 // Lunes = 1, Domingo = 7
+    var patternStartsWithParent: Int = 1
+    var patternApplicationMode: String = "FORWARD"
+    var changeDayOfWeek: Int = 1
 
     // Mes actual para el calendario
     var currentYearMonth: YearMonth = YearMonth.now()
 
-    // Alternancia por años (SOLO afecta al verano y leyendas)
-    var evenYearStartsWith: Int = 1  // 1 = Parent1, 2 = Parent2
-    var oddYearStartsWith: Int = 2   // 1 = Parent1, 2 = Parent2
+    // Alternancia por años
+    var evenYearStartsWith: Int = 1
+    var oddYearStartsWith: Int = 2
 
-    // Configuración de verano (solo división, el resto se determina por años pares/impares)
+    // Configuración de verano
     var summerDivision: VacationDivision = VacationDivision.HALF
 
-    // Configuración de Navidad - 2 PERÍODOS (deprecated, mantenido solo por compatibilidad)
+    // ─── VISITAS ───────────────────────────────────────────────
+    // Días de la semana en que cada padre tiene visita (1=Lunes … 7=Domingo)
+    // Ejemplo: listOf(3, 5) → miércoles y viernes
+    var visitDaysParent1: List<Int> = emptyList()
+    var visitDaysParent2: List<Int> = emptyList()
+    // ──────────────────────────────────────────────────────────
+
+    // Configuración de Navidad (deprecated)
     @Deprecated("Navidad debe configurarse manualmente vía summerEvents")
     var christmasPeriod1Start: LocalDate = LocalDate.of(2024, 12, 23)
     @Deprecated("Navidad debe configurarse manualmente vía summerEvents")
@@ -47,7 +54,6 @@ class CustodyViewModel : ViewModel() {
     @Deprecated("Navidad debe configurarse manualmente vía summerEvents")
     var christmasPeriod2YearRule: YearRule = YearRule.EVEN
 
-    // Configuración antigua (mantener por compatibilidad)
     @Deprecated("Usar summerEvents para configurar Navidad")
     var christmasFirstParent: ParentType = ParentType.PARENT1
     @Deprecated("Usar summerEvents para configurar Navidad")
@@ -59,7 +65,7 @@ class CustodyViewModel : ViewModel() {
     @Deprecated("Usar summerEvents para configurar Navidad")
     var christmasEnd: LocalDate = LocalDate.of(2025, 1, 8)
 
-    // Configuración de Semana Santa (deprecated, debe configurarse manualmente)
+    // Configuración de Semana Santa (deprecated)
     @Deprecated("Semana Santa debe configurarse manualmente vía summerEvents")
     var easterFirstParent: ParentType = ParentType.PARENT2
     @Deprecated("Semana Santa debe configurarse manualmente vía summerEvents")
@@ -71,7 +77,7 @@ class CustodyViewModel : ViewModel() {
     @Deprecated("Semana Santa debe configurarse manualmente vía summerEvents")
     var easterEnd: LocalDate = LocalDate.of(2024, 4, 1)
     @Deprecated("Semana Santa debe configurarse manualmente vía summerEvents")
-    var easterDisabled: Boolean = true  // Deshabilitada por defecto
+    var easterDisabled: Boolean = true
 
     // Períodos sin custodia
     val noCustodyPeriods: MutableList<NoCustodyPeriod> = mutableListOf()
@@ -90,14 +96,26 @@ class CustodyViewModel : ViewModel() {
         currentYearMonth = currentYearMonth.minusMonths(1)
     }
 
-    // Función para obtener información de un día específico
+    // ─── VISITAS: helper ──────────────────────────────────────
+    /**
+     * Devuelve qué padre tiene visita en [date], o null si ninguno.
+     * Si un día cae en período especial (verano, Navidad, SS), no hay visita.
+     */
+    fun getVisitParent(date: LocalDate): ParentType? {
+        val dow = date.dayOfWeek.value  // 1=Lunes … 7=Domingo
+        return when {
+            dow in visitDaysParent1 -> ParentType.PARENT1
+            dow in visitDaysParent2 -> ParentType.PARENT2
+            else -> null
+        }
+    }
+    // ──────────────────────────────────────────────────────────
+
     fun getDayInfo(date: LocalDate): CustodyDay {
-        // Buscar si hay cambio de patrón para esta fecha
         val cambioAplicable = patternChanges
             .filter { it.startDate <= date }
             .maxByOrNull { it.startDate }
 
-        // Usar el patrón del cambio si existe, si no usar el base
         val patronAUsar = cambioAplicable?.pattern ?: custodyPattern
         val fechaInicio = cambioAplicable?.startDate ?: startDate
 

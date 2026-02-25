@@ -45,6 +45,10 @@ class PreferencesManager(context: Context) {
         private const val DEFAULT_PATTERN_STARTS_WITH = 1
         private const val DEFAULT_CHANGE_DAY_OF_WEEK = 1
         private const val DEFAULT_APPLICATION_MODE = "FORWARD"
+        // ─── VISITAS ───────────────────────────────────────────────
+        private const val KEY_VISIT_DAYS_PARENT1 = "visitDaysParent1"
+        private const val KEY_VISIT_DAYS_PARENT2 = "visitDaysParent2"
+        // ──────────────────────────────────────────────────────────
     }
 
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -70,6 +74,10 @@ class PreferencesManager(context: Context) {
 
             // Configuración de verano
             putString(KEY_SUMMER_DIVISION, viewModel.summerDivision.name)
+
+            // Días de visita (guardados como "1,3,5" o "" si vacío)
+            putString(KEY_VISIT_DAYS_PARENT1, viewModel.visitDaysParent1.joinToString(","))
+            putString(KEY_VISIT_DAYS_PARENT2, viewModel.visitDaysParent2.joinToString(","))
 
             // Guardar cambios de patrón
             savePatternChanges(this, viewModel)
@@ -217,6 +225,10 @@ class PreferencesManager(context: Context) {
             viewModel.summerDivision = parseEnumSafely<VacationDivision>(
                 prefs.getString(KEY_SUMMER_DIVISION, VacationDivision.HALF.name)
             ) ?: VacationDivision.HALF
+
+            // Días de visita
+            viewModel.visitDaysParent1 = parseIntList(prefs.getString(KEY_VISIT_DAYS_PARENT1, ""))
+            viewModel.visitDaysParent2 = parseIntList(prefs.getString(KEY_VISIT_DAYS_PARENT2, ""))
 
             // Cargar cambios de patrón
             loadPatternChanges(viewModel)
@@ -519,5 +531,13 @@ class PreferencesManager(context: Context) {
         setInstallDate(fakeInstallDate)
         Log.d(TAG, "Simulated install date: $fakeInstallDate ($days days ago)")
     }
-
+    private fun parseIntList(value: String?): List<Int> {
+        if (value.isNullOrEmpty()) return emptyList()
+        return try {
+            value.split(",").map { it.trim().toInt() }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error parsing int list: $value", e)
+            emptyList()
+        }
+    }
 }

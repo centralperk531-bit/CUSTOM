@@ -47,6 +47,26 @@ class MainActivity : AppCompatActivity() {
     // Views principales
     private val edtParent1 by lazy { findViewById<EditText>(R.id.edtParent1) }
     private val edtParent2 by lazy { findViewById<EditText>(R.id.edtParent2) }
+    private val tvVisitParent1Label by lazy { findViewById<TextView>(R.id.tvVisitParent1Label) }
+    private val tvVisitParent2Label by lazy { findViewById<TextView>(R.id.tvVisitParent2Label) }
+
+    // ─── Checkboxes de visita ──────────────────────────────
+    private val cbV1Mon by lazy { findViewById<CheckBox>(R.id.cbV1Mon) }
+    private val cbV1Tue by lazy { findViewById<CheckBox>(R.id.cbV1Tue) }
+    private val cbV1Wed by lazy { findViewById<CheckBox>(R.id.cbV1Wed) }
+    private val cbV1Thu by lazy { findViewById<CheckBox>(R.id.cbV1Thu) }
+    private val cbV1Fri by lazy { findViewById<CheckBox>(R.id.cbV1Fri) }
+    private val cbV1Sat by lazy { findViewById<CheckBox>(R.id.cbV1Sat) }
+    private val cbV1Sun by lazy { findViewById<CheckBox>(R.id.cbV1Sun) }
+
+    private val cbV2Mon by lazy { findViewById<CheckBox>(R.id.cbV2Mon) }
+    private val cbV2Tue by lazy { findViewById<CheckBox>(R.id.cbV2Tue) }
+    private val cbV2Wed by lazy { findViewById<CheckBox>(R.id.cbV2Wed) }
+    private val cbV2Thu by lazy { findViewById<CheckBox>(R.id.cbV2Thu) }
+    private val cbV2Fri by lazy { findViewById<CheckBox>(R.id.cbV2Fri) }
+    private val cbV2Sat by lazy { findViewById<CheckBox>(R.id.cbV2Sat) }
+    private val cbV2Sun by lazy { findViewById<CheckBox>(R.id.cbV2Sun) }
+// ──────────────────────────────────────────────────────
     private val edtStartDate by lazy { findViewById<EditText>(R.id.edtStartDate) }
     private val tvResult by lazy { findViewById<TextView>(R.id.tvResult) }
     private val tvStats by lazy { findViewById<TextView>(R.id.tvStats) }
@@ -73,6 +93,14 @@ class MainActivity : AppCompatActivity() {
 
         initializeViewModel()
         setupUI()
+    }
+    private fun setupUI() {
+        setupTabs()
+        setupViewPager()
+        setupSpinners()
+        setupListeners()
+        updateDisplay()
+        loadVisitDaysToUI()
     }
 
     private fun initializeViewModel() {
@@ -104,14 +132,6 @@ class MainActivity : AppCompatActivity() {
         edtParent1.setText(viewModel.parent1Name)
         edtParent2.setText(viewModel.parent2Name)
         edtStartDate.setText(viewModel.startDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")))
-    }
-
-    private fun setupUI() {
-        setupTabs()
-        setupViewPager()
-        setupSpinners()
-        setupListeners()
-        updateDisplay()
     }
 
     private fun setupTabs() {
@@ -403,6 +423,50 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+        val visitListener = CompoundButton.OnCheckedChangeListener { _, _ ->
+            saveConfiguration()
+            updateDisplay()
+        }
+        cbV1Mon.setOnCheckedChangeListener(visitListener)
+        cbV1Tue.setOnCheckedChangeListener(visitListener)
+        cbV1Wed.setOnCheckedChangeListener(visitListener)
+        cbV1Thu.setOnCheckedChangeListener(visitListener)
+        cbV1Fri.setOnCheckedChangeListener(visitListener)
+        cbV1Sat.setOnCheckedChangeListener(visitListener)
+        cbV1Sun.setOnCheckedChangeListener(visitListener)
+
+        cbV2Mon.setOnCheckedChangeListener(visitListener)
+        cbV2Tue.setOnCheckedChangeListener(visitListener)
+        cbV2Wed.setOnCheckedChangeListener(visitListener)
+        cbV2Thu.setOnCheckedChangeListener(visitListener)
+        cbV2Fri.setOnCheckedChangeListener(visitListener)
+        cbV2Sat.setOnCheckedChangeListener(visitListener)
+        cbV2Sun.setOnCheckedChangeListener(visitListener)
+    }
+    private fun loadVisitDaysToUI() {
+        android.util.Log.d("DEBUG", "parent1Name = ${viewModel.parent1Name}")
+        android.util.Log.d("DEBUG", "parent2Name = ${viewModel.parent2Name}")
+        // Nombres dinámicos ← AÑADE ESTAS DOS LÍNEAS
+        tvVisitParent1Label.text = "Visitas ${viewModel.parent1Name}"
+        tvVisitParent2Label.text = "Visitas ${viewModel.parent2Name}"
+
+        val p1 = viewModel.visitDaysParent1
+        cbV1Mon.isChecked = 1 in p1
+        cbV1Tue.isChecked = 2 in p1
+        cbV1Wed.isChecked = 3 in p1
+        cbV1Thu.isChecked = 4 in p1
+        cbV1Fri.isChecked = 5 in p1
+        cbV1Sat.isChecked = 6 in p1
+        cbV1Sun.isChecked = 7 in p1
+
+        val p2 = viewModel.visitDaysParent2
+        cbV2Mon.isChecked = 1 in p2
+        cbV2Tue.isChecked = 2 in p2
+        cbV2Wed.isChecked = 3 in p2
+        cbV2Thu.isChecked = 4 in p2
+        cbV2Fri.isChecked = 5 in p2
+        cbV2Sat.isChecked = 6 in p2
+        cbV2Sun.isChecked = 7 in p2
     }
 
     private fun setupSpinnerListener(spinnerId: Int, onSelected: (Int) -> Unit) {
@@ -432,7 +496,26 @@ class MainActivity : AppCompatActivity() {
                 return
             }
         }
-
+        // ─── Guardar días de visita ────────────────────────────
+        viewModel.visitDaysParent1 = listOfNotNull(
+            if (cbV1Mon.isChecked) 1 else null,
+            if (cbV1Tue.isChecked) 2 else null,
+            if (cbV1Wed.isChecked) 3 else null,
+            if (cbV1Thu.isChecked) 4 else null,
+            if (cbV1Fri.isChecked) 5 else null,
+            if (cbV1Sat.isChecked) 6 else null,
+            if (cbV1Sun.isChecked) 7 else null
+        )
+        viewModel.visitDaysParent2 = listOfNotNull(
+            if (cbV2Mon.isChecked) 1 else null,
+            if (cbV2Tue.isChecked) 2 else null,
+            if (cbV2Wed.isChecked) 3 else null,
+            if (cbV2Thu.isChecked) 4 else null,
+            if (cbV2Fri.isChecked) 5 else null,
+            if (cbV2Sat.isChecked) 6 else null,
+            if (cbV2Sun.isChecked) 7 else null
+        )
+// ──────────────────────────────────────────────────────
         setupDynamicParentSpinners()
         preferencesManager.saveConfiguration(viewModel)
         updateDisplay()
@@ -453,6 +536,8 @@ class MainActivity : AppCompatActivity() {
             pendingEventType = savedEventType
             android.util.Log.d("CustodiaApp", "updateDisplay - pendingEventType restaurado a: $savedEventType")
         }
+        tvVisitParent1Label.text = "Visitas ${viewModel.parent1Name}"
+        tvVisitParent2Label.text = "Visitas ${viewModel.parent2Name}"
     }
 
     private fun updateStatsAsync() {
