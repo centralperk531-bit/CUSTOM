@@ -95,7 +95,10 @@ class CalendarRenderer(
             val visitParent = if (!isSpecialPeriod) viewModel.getVisitParent(date) else null
 
             // La visita solo aplica si el padre visitante es DISTINTO al custodio del día
-            val isVisitDay = visitParent != null && visitParent != custody.parent
+            val isVisitFromSpecial = viewModel.specialDates.any {
+                it.date == date && it.description == "Visita"
+            }
+            val isVisitDay = isVisitFromSpecial || (visitParent != null && visitParent != custody.parent)
 
             // ─── Color final ──────────────────────────────────────
             val bgColor = when {

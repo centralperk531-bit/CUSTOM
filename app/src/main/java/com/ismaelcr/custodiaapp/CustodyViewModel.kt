@@ -29,8 +29,6 @@ class CustodyViewModel : ViewModel() {
     var summerDivision: VacationDivision = VacationDivision.HALF
 
     // ─── VISITAS ───────────────────────────────────────────────
-    // Días de la semana en que cada padre tiene visita (1=Lunes … 7=Domingo)
-    // Ejemplo: listOf(3, 5) → miércoles y viernes
     var visitDaysParent1: List<Int> = emptyList()
     var visitDaysParent2: List<Int> = emptyList()
     // ──────────────────────────────────────────────────────────
@@ -97,12 +95,8 @@ class CustodyViewModel : ViewModel() {
     }
 
     // ─── VISITAS: helper ──────────────────────────────────────
-    /**
-     * Devuelve qué padre tiene visita en [date], o null si ninguno.
-     * Si un día cae en período especial (verano, Navidad, SS), no hay visita.
-     */
     fun getVisitParent(date: LocalDate): ParentType? {
-        val dow = date.dayOfWeek.value  // 1=Lunes … 7=Domingo
+        val dow = date.dayOfWeek.value
         return when {
             dow in visitDaysParent1 -> ParentType.PARENT1
             dow in visitDaysParent2 -> ParentType.PARENT2
@@ -127,4 +121,18 @@ class CustodyViewModel : ViewModel() {
         }
         return CustodyDay(date = date, parent = parent)
     }
+
+    // ─── MENÚ CONTEXTUAL DEL CALENDARIO ──────────────────────
+    fun getEventForDate(date: LocalDate): Any? {
+        return specialDates.find { it.date == date }
+            ?: summerEvents.find { date in it.startDate..it.endDate }
+            ?: noCustodyPeriods.find { date in it.startDate..it.endDate }
+    }
+
+    fun deleteEventForDate(date: LocalDate) {
+        specialDates.removeAll { it.date == date }
+        summerEvents.removeAll { date in it.startDate..it.endDate }
+        noCustodyPeriods.removeAll { date in it.startDate..it.endDate }
+    }
+    // ──────────────────────────────────────────────────────────
 }

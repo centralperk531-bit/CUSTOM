@@ -790,46 +790,54 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun onCalendarDateClicked(date: LocalDate) {
-        // LOG DE DEPURACIÓN
         android.util.Log.d("CustodiaApp", "onCalendarDateClicked llamado con fecha: $date")
-        android.util.Log.d("CustodiaApp", "pendingEventType actual: $pendingEventType")
-        android.util.Log.d("CustodiaApp", "rangeSelectionManager.isSelecting: ${rangeSelectionManager.isSelecting}")
 
         if (pendingEventType == null) {
-            // No hay selección activa, ignorar
-            android.util.Log.d("CustodiaApp", "pendingEventType es null, saliendo...")
-            Toast.makeText(this, "⚠️ DEBUG: pendingEventType es NULL", Toast.LENGTH_SHORT).show()
+            val existingEvent = viewModel.getEventForDate(date)
+
+            val options = mutableListOf<String>()
+            options.add("Añadir visita")
+            options.add("Añadir día especial")
+            if (existingEvent != null) {
+                options.add("Borrar evento")
+            }
+
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle(date.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")))
+                .setItems(options.toTypedArray()) { _, which ->
+                    when (options[which]) {
+                        "Añadir visita" -> showAddVisitDialog(date)
+                        "Añadir día especial" -> showSpecialDateConfigDialog(date)
+                        "Borrar evento" -> {
+                            viewModel.deleteEventForDate(date)
+                            updateDisplay()
+                        }
+                    }
+                }
+                .setNegativeButton("Cancelar", null)
+                .show()
             return
         }
 
         if (!rangeSelectionManager.isSelecting) {
-            // Primera selección: marcar inicio
             android.util.Log.d("CustodiaApp", "Primera selección - marcando inicio")
             rangeSelectionManager.startSelection(date)
             updateDisplay()
             showSelectionToast("Fecha inicio: ${date.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))}. Selecciona fecha final.")
         } else {
-            // Segunda selección: completar rango
             android.util.Log.d("CustodiaApp", "Segunda selección - completando rango")
             rangeSelectionManager.updateEndDate(date)
             val range = rangeSelectionManager.completeSelection()
 
             if (range != null) {
-                // Llamar al diálogo correspondiente según el tipo
-                // NO limpiar pendingEventType aquí, se limpiará en los botones del diálogo
                 when (pendingEventType) {
                     "PERIOD" -> showRangeConfigDialog(range.first, range.second, "") { updateDisplay() }
                     "CHRISTMAS" -> showRangeConfigDialog(range.first, range.second, "Navidad") { updateDisplay() }
                     "EASTER" -> showRangeConfigDialog(range.first, range.second, "Semana Santa") { updateDisplay() }
-                    "SPECIAL_DATE" -> {
-                        // Para fecha especial solo usar el primer día
-                        showSpecialDateConfigDialog(range.first)
-                    }
+                    "SPECIAL_DATE" -> showSpecialDateConfigDialog(range.first)
                 }
             }
 
-            // Limpiar solo el rangeSelectionManager, NO el pendingEventType
-            // El pendingEventType se limpiará cuando el usuario pulse Guardar o Cancelar
             rangeSelectionManager.clearSelection()
             updateDisplay()
         }
@@ -1040,6 +1048,54 @@ class MainActivity : AppCompatActivity() {
                 .setNegativeButton("Cerrar", null)
                 .show()
         }
+    }
+
+    private fun showAddVisitDialog(date: LocalDate) {
+        val custodyParent = custodyCalculator.getCustodyForDate(date).parent
+
+        val suggestedParent = when (custodyParent) {
+            ParentType.PARENT1 -> ParentType.PARENT2
+            ParentType.PARENT2 -> ParentType.PARENT1
+            ParentType.NONE -> ParentType.PARENT1
+        }
+        val suggestedName = when (suggestedParent) {
+            ParentType.PARENT1 -> viewModel.parent1Name
+            ParentType.PARENT2 -> viewModel.parent2Name
+            else -> viewModel.parent1Name
+        }
+        val otherName = when (suggestedParent) {
+            ParentType.PARENT1 -> viewModel.parent2Name
+            ParentType.PARENT2 -> viewModel.parent1Name
+            else -> viewModel.parent2Name
+        }
+        val custodyName = when (custodyParent) {
+            ParentType.PARENT1 -> viewModel.parent1Name
+            ParentType.PARENT2 -> viewModel.parent2Name
+            ParentType.NONE -> "ninguno"
+        }
+
+        var selectedParent = suggestedParent
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Añadir visita — ${date.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))}")
+            .setMessage("Ese día le toca a $custodyName.\nVisita sugerida para: $suggestedName")
+            .setPositiveButton("Guardar") { _, _ ->
+                viewModel.specialDates.add(SpecialDate(date, suggestedParent, "Visita"))
+                updateDisplay()
+                Toast.makeText(this, "Visita de $suggestedName guardada", Toast.LENGTH_SHORT).show()
+            }
+            .setNeutralButton("Cambiar a $otherName") { _, _ ->
+                val changedParent = when (suggestedParent) {
+                    ParentType.PARENT1 -> ParentType.PARENT2
+                    ParentType.PARENT2 -> ParentType.PARENT1
+                    else -> ParentType.PARENT1
+                }
+                viewModel.specialDates.add(SpecialDate(date, changedParent, "Visita"))
+                updateDisplay()
+                Toast.makeText(this, "Visita de $otherName guardada", Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
     }
 
     private fun showSpecialDateConfigDialog(date: LocalDate) {
