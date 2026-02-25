@@ -57,13 +57,11 @@ class CalendarRenderer(
     }
 
     private fun renderHeader(builder: SpannableStringBuilder) {
-        val daysHeader = listOf("Lu", "Ma", "Mi", "Ju", "Vi", "Sá", "Do")
+        val daysHeader = listOf("Lu", "Ma", "Mi", "Ju", "Vi", "Sa", "Do")
         val headerStart = builder.length
 
         for (day in daysHeader) {
-            // cada columna ocupa 4 caracteres (" sp + XX + sp")
-            val centered = day.padStart((day.length + CELL_WIDTH) / 2).padEnd(CELL_WIDTH)
-            builder.append(centered)
+            builder.append(" $day ")
         }
 
         builder.append("\n\n")

@@ -19,8 +19,8 @@ android {
         applicationId = "com.ismaelcr.custodiaapp"
         minSdk = 26
         targetSdk = 35
-        versionCode = 9
-        versionName = "3.0.3"
+        versionCode = 11
+        versionName = "3.1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
