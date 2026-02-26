@@ -1,0 +1,183 @@
+[33mcommit 4f045a09012dc0dcbf716285195f237781c48b34[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: IsmaelCR <ismaelcanorueda@gmail.com>
+Date:   Thu Feb 26 12:06:16 2026 +0100
+
+    Backup: visitas respetan períodos especiales + verano + layout días de visita
+
+[33mcommit 0cc97938f861124ce2e49d5846123719a229e8d4[m
+Author: IsmaelCR <ismaelcanorueda@gmail.com>
+Date:   Wed Feb 25 19:38:00 2026 +0100
+
+    Menú contextual calendario: añadir visita, día especial y borrar evento
+
+[33mcommit 2703eb811997fcf5628877b2da3030e19340d771[m
+Author: IsmaelCR <ismaelcanorueda@gmail.com>
+Date:   Wed Feb 25 19:04:18 2026 +0100
+
+    Nombres dinámicos custodios y visitas en tiempo real
+
+[33mcommit b0f13f7338749ff68d722c25eabd3b7bee50b5b5[m
+Author: IsmaelCR <ismaelcanorueda@gmail.com>
+Date:   Wed Feb 25 16:27:20 2026 +0100
+
+    Backup antes de implementar días de visita
+
+[33mcommit 72184575444199161dd7e88467fa3f267b04804f[m
+Author: IsmaelCR <ismaelcanorueda@gmail.com>
+Date:   Fri Feb 20 12:59:24 2026 +0100
+
+    Añadido botón guardar en pantalla de calendario
+
+[33mcommit eac6fad7623153ca1e3acc15500c7acf6d9ec5d6[m
+Author: IsmaelCR <ismaelcanorueda@gmail.com>
+Date:   Wed Feb 4 20:14:14 2026 +0100
+
+    reparadocambios en custodia, reinicio al cargar backup
+
+[33mcommit 861bb2a4e2a7bcd8d905ae2781400c35ac7529d1[m
+Author: IsmaelCR <ismaelcanorueda@gmail.com>
+Date:   Wed Feb 4 13:11:29 2026 +0100
+
+    Añadidas opciones de fines de semana configurable Solucionado el tema de la compra
+
+[33mcommit ac8a32e16d40efd5079572840fb10bdfde90e8c0[m
+Author: IsmaelCR <ismaelcanorueda@gmail.com>
+Date:   Tue Feb 3 19:12:40 2026 +0100
+
+    Mejora patrón WeekdaysWeekends: añadido enum WeekendMode con 4 opciones
+    
+    - FIXED: Fines de semana siempre al mismo padre (comportamiento anterior)
+    - ALTERNATE: Fines de semana alternos cada semana (50/50)
+    - ONE_OF_THREE: Ciclo de 3 semanas (2 para uno, 1 para otro)
+    - ONE_OF_FOUR: Ciclo de 4 semanas (3 para uno, 1 para otro)
+    
+    Archivos modificados:
+    - CustodyPattern.kt: Añadido enum y lógica en WeekdaysWeekends
+    - PreferencesManager.kt: Guardado/carga de weekendMode
+    - MainActivity.kt: Nuevo diálogo de configuración
+    - dialog_weekend_mode.xml: Layout del diálogo
+
+[33mcommit e531ba4649487a3634d3909e9c734e53984a6aea[m
+Author: IsmaelCR <ismaelcanorueda@gmail.com>
+Date:   Tue Feb 3 13:20:53 2026 +0100
+
+    Preparación para mejorar patrón Entre Semana/Fines de Semana con opciones alternos, 1 de 3 y 1 de 4
+
+[33mcommit 74f3ef633a82b1f620b71950db048b273e276278[m
+Author: IsmaelCR <ismaelcanorueda@gmail.com>
+Date:   Sat Jan 31 20:19:13 2026 +0100
+
+    Cambio paquete + targetSdk 35
+
+[33mcommit 43b51d616ab4c169afe8c89998701434a519c7f8[m
+Author: IsmaelCR <ismaelcanorueda@gmail.com>
+Date:   Sun Jan 25 12:06:14 2026 +0100
+
+    Preparar app para producción
+    - Desactivar IS_DEBUG_MODE en Config.kt
+    - Cambiar allowBackup a false en AndroidManifest
+    - Eliminar dataExtractionRules y fullBackupContent
+    - App lista para pruebas con Google Play Billing real
+
+[33mcommit abadd58850703514cb87f0b58f10a7ddcb05116f[m
+Author: IsmaelCR <ismaelcanorueda@gmail.com>
+Date:   Thu Jan 22 15:55:00 2026 +0100
+
+    Ocultar botones testing Premium en producción y añadir mensaje pagos próximamente
+
+[33mcommit 5dd7e0917d77b65db0cc8a7ee914effb67c20ffc[m
+Author: IsmaelCR <ismaelcanorueda@gmail.com>
+Date:   Wed Jan 21 13:26:52 2026 +0100
+
+    Añadidos anuncios a PERIOD y SPECIAL_DATE
+
+[33mcommit 15cba2eabc6ac09b71f849ad2f880cab8c6b6dc6[m
+Author: centralperk531-bit <centralperk.531@gmail.com>
+Date:   Wed Jan 21 08:20:01 2026 +0100
+
+    Revisar el contenido y el idioma de la política de privacidad
+    
+    Se ha actualizado la política de privacidad para reflejar los cambios en el idioma y la estructura, incluidas las nuevas secciones sobre el manejo de datos y los derechos del usuario.
+
+[33mcommit 2f43ee98e30607340ba726d127d28e077fa1742c[m
+Author: centralperk531-bit <centralperk.531@gmail.com>
+Date:   Tue Jan 20 13:55:45 2026 +0100
+
+    Add initial privacy policy for Mi Turno Family app
+
+[33mcommit 75c87bd10528c05d376be2d1f87b6af9cb9b47ae[m
+Merge: 21326ac 348f7c6
+Author: IsmaelCR <ismaelcanorueda@gmail.com>
+Date:   Tue Jan 20 12:04:02 2026 +0100
+
+    Merge branch 'main' of https://github.com/centralperk531-bit/CUSTOM
+
+[33mcommit 21326acef9460e5c199e7cd716719974d80bc2a8[m
+Author: IsmaelCR <ismaelcanorueda@gmail.com>
+Date:   Tue Jan 20 11:52:34 2026 +0100
+
+    Implementado sistema completo de Backup y Restauración con bloqueo Premium
+
+[33mcommit 135e56cfa550e50daf7b0f9ac50255214719ae33[m
+Author: IsmaelCR <ismaelcanorueda@gmail.com>
+Date:   Sat Jan 17 10:26:53 2026 +0100
+
+    BillingManager.kt creado
+    MainActivity integrada con Billing
+    PremiumFragment conectado
+
+[33mcommit 04e96275aec986f47a3718953f693b522095d7e2[m
+Author: IsmaelCR <ismaelcanorueda@gmail.com>
+Date:   Sat Jan 17 08:57:45 2026 +0100
+
+    ✅ FASE 4 completada: AdMob integrado
+    
+    - Añadida biblioteca AdMob y configuración
+    - Creado AdManager para gestionar anuncios intersticiales
+    - Anuncios en 4 botones: Cambiar patrón, Períodos especiales, Navidad, Semana Santa
+    - Bloqueo de funciones cuando expira periodo de prueba (30 días)
+    - Pantalla Premium accesible desde botón y diálogos
+    - Botones de testing funcionales (simular 30 días, toggle premium, resetear)
+    - Corregido botón "Ver Premium" en exportar PDF
+
+[33mcommit 25ddfc4d152c1ff16e0c59b214f1282e6f08457f[m
+Author: IsmaelCR <ismaelcanorueda@gmail.com>
+Date:   Thu Jan 15 13:42:45 2026 +0100
+
+    Sistema Premium base - FASE 1-3 completadas
+
+[33mcommit 348f7c61c155c9f63cfba4e8f39492d6805562e1[m
+Author: centralperk531-bit <centralperk.531@gmail.com>
+Date:   Fri Nov 28 09:49:06 2025 +0100
+
+    Add files via upload
+
+[33mcommit 0363c07f40dc701b8409057f503ebaf47bbbc39a[m
+Author: centralperk531-bit <centralperk.531@gmail.com>
+Date:   Fri Nov 28 09:46:28 2025 +0100
+
+    Delete custodiaapp directory
+
+[33mcommit fcc1faaad30a63a1ab4f2318380f44e95b6f1429[m
+Author: centralperk531-bit <centralperk.531@gmail.com>
+Date:   Tue Nov 18 10:59:50 2025 +0100
+
+    Add files via upload
+
+[33mcommit babdcfcf86b4995ef29ae2db425da884955493bf[m
+Author: centralperk531-bit <centralperk.531@gmail.com>
+Date:   Tue Nov 18 10:55:12 2025 +0100
+
+    Add files via upload
+
+[33mcommit 672ee098911af75f3f84088e2059240af578fa5d[m
+Author: centralperk531-bit <centralperk.531@gmail.com>
+Date:   Thu Oct 30 12:18:29 2025 +0100
+
+    Add files via upload
+
+[33mcommit 31da6a1fdb5a55ab48bad7d3440ca9b0ad9751e1[m
+Author: centralperk531-bit <centralperk.531@gmail.com>
+Date:   Wed Oct 29 18:55:21 2025 +0100
+
+    Add files via upload

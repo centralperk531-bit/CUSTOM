@@ -3,43 +3,86 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp"
-    android:background="@android:color/white">
+    android:padding="8dp">
 
-    <!-- LOGO SUPERIOR -->
-    <ImageView
-       android:id="@+id/imgLogo"
-       android:layout_width="120dp"
-       android:layout_height="120dp"
-       android:layout_gravity="center"
-       android:src="@drawable/logo_app"
-       android:adjustViewBounds="true"
-       android:scaleType="fitCenter"
-       android:layout_marginBottom="12dp" />
-
-        <!-- Título del mes -->
+    <!-- Título del mes -->
     <TextView
         android:id="@+id/tvMonthTitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Enero 2024"
-        android:textSize="24sp"
-        android:textStyle="bold"
         android:gravity="center"
-        android:paddingBottom="16dp"
-        android:textColor="#333333" />
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:paddingBottom="8dp"/>
 
-    <!-- Calendario -->
-    <TextView
-        android:id="@+id/tvCalendar"
-        android:layout_width="wrap_content"
+    <!-- Cabecera días de la semana -->
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:textSize="16sp"
-        android:lineSpacingExtra="4dp"
-        android:textColor="#333333"
-        android:fontFamily="monospace"
-        android:letterSpacing="0"
-        android:includeFontPadding="false" />
+        android:orientation="horizontal">
+
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:text="Lu" android:gravity="center"
+            android:textStyle="bold" android:textSize="12sp"/>
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:text="Ma" android:gravity="center"
+            android:textStyle="bold" android:textSize="12sp"/>
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:text="Mi" android:gravity="center"
+            android:textStyle="bold" android:textSize="12sp"/>
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:text="Ju" android:gravity="center"
+            android:textStyle="bold" android:textSize="12sp"/>
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:text="Vi" android:gravity="center"
+            android:textStyle="bold" android:textSize="12sp"/>
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:text="Sa" android:gravity="center"
+            android:textStyle="bold" android:textSize="12sp"/>
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:text="Do" android:gravity="center"
+            android:textStyle="bold" android:textSize="12sp"/>
+    </LinearLayout>
+
+    <!-- Grid del calendario -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvCalendarGrid"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"/>
+
+    <!-- Leyenda -->
+    <LinearLayout
+        android:id="@+id/llLegend"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginTop="12dp"
+        android:padding="8dp">
+
+        <TextView
+            android:id="@+id/tvLegend1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="13sp"
+            android:layout_marginBottom="4dp"/>
+        <TextView
+            android:id="@+id/tvLegend2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="13sp"
+            android:layout_marginBottom="4dp"/>
+        <TextView
+            android:id="@+id/tvLegend3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="13sp"
+            android:layout_marginBottom="4dp"/>
+        <TextView
+            android:id="@+id/tvLegend4"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="13sp"/>
+    </LinearLayout>
 
 </LinearLayout>
