@@ -431,97 +431,86 @@
                             android:textColor="?attr/colorPrimary"
                             android:layout_marginBottom="12dp"/>
 
-                        <!-- Visitas Padre 1 y 2-->
+                        <!-- Custodio 1 -->
                         <TextView
                             android:id="@+id/tvVisitParent1Label"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="Visitas Custodio 1"
+                            android:text="Custodio 1"
                             android:textStyle="bold"
-                            android:layout_marginBottom="8dp"/>
-                        <TextView
-                            android:id="@+id/tvVisitParent2Label"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Visitas Custodio 2"
-                            android:textStyle="bold"
-                            android:layout_marginBottom="8dp"/>
+                            android:layout_marginBottom="4dp"/>
 
                         <LinearLayout
-                        android:id="@+id/llVisitDaysParent1"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:layout_marginBottom="16dp">
+                            android:id="@+id/llVisitDaysParent1"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:layout_marginBottom="16dp">
 
-                        <CheckBox android:id="@+id/cbV1Mon" android:layout_width="0dp"
-                            android:layout_height="wrap_content" android:layout_weight="1"
-                            android:text="L" android:gravity="center"
-                            android:layoutDirection="rtl"/>
-                        <CheckBox android:id="@+id/cbV1Tue" android:layout_width="0dp"
-                            android:layout_height="wrap_content" android:layout_weight="1"
-                            android:text="M" android:gravity="center"
-                            android:layoutDirection="rtl"/>
-                        <CheckBox android:id="@+id/cbV1Wed" android:layout_width="0dp"
-                            android:layout_height="wrap_content" android:layout_weight="1"
-                            android:text="X" android:gravity="center"
-                            android:layoutDirection="rtl"/>
-                        <CheckBox android:id="@+id/cbV1Thu" android:layout_width="0dp"
-                            android:layout_height="wrap_content" android:layout_weight="1"
-                            android:text="J" android:gravity="center"
-                            android:layoutDirection="rtl"/>
-                        <CheckBox android:id="@+id/cbV1Fri" android:layout_width="0dp"
-                            android:layout_height="wrap_content" android:layout_weight="1"
-                            android:text="V" android:gravity="center"
-                            android:layoutDirection="rtl"/>
-                        <CheckBox android:id="@+id/cbV1Sat" android:layout_width="0dp"
-                            android:layout_height="wrap_content" android:layout_weight="1"
-                            android:text="S" android:gravity="center"
-                            android:layoutDirection="rtl"/>
-                        <CheckBox android:id="@+id/cbV1Sun" android:layout_width="0dp"
-                            android:layout_height="wrap_content" android:layout_weight="1"
-                            android:text="D" android:gravity="center"
-                            android:layoutDirection="rtl"/>
+                            <CheckBox android:id="@+id/cbV1Mon" android:layout_width="0dp"
+                                android:layout_height="wrap_content" android:layout_weight="1"
+                                android:text="L" android:gravity="center"/>
+                            <CheckBox android:id="@+id/cbV1Tue" android:layout_width="0dp"
+                                android:layout_height="wrap_content" android:layout_weight="1"
+                                android:text="M" android:gravity="center"/>
+                            <CheckBox android:id="@+id/cbV1Wed" android:layout_width="0dp"
+                                android:layout_height="wrap_content" android:layout_weight="1"
+                                android:text="X" android:gravity="center"/>
+                            <CheckBox android:id="@+id/cbV1Thu" android:layout_width="0dp"
+                                android:layout_height="wrap_content" android:layout_weight="1"
+                                android:text="J" android:gravity="center"/>
+                            <CheckBox android:id="@+id/cbV1Fri" android:layout_width="0dp"
+                                android:layout_height="wrap_content" android:layout_weight="1"
+                                android:text="V" android:gravity="center"/>
+                            <CheckBox android:id="@+id/cbV1Sat" android:layout_width="0dp"
+                                android:layout_height="wrap_content" android:layout_weight="1"
+                                android:text="S" android:gravity="center"/>
+                            <CheckBox android:id="@+id/cbV1Sun" android:layout_width="0dp"
+                                android:layout_height="wrap_content" android:layout_weight="1"
+                                android:text="D" android:gravity="center"/>
+                        </LinearLayout>
+
+                        <!-- Custodio 2 -->
+                        <TextView
+                            android:id="@+id/tvVisitParent2Label"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Custodio 2"
+                            android:textStyle="bold"
+                            android:layout_marginBottom="4dp"/>
+
+                        <LinearLayout
+                            android:id="@+id/llVisitDaysParent2"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <CheckBox android:id="@+id/cbV2Mon" android:layout_width="0dp"
+                                android:layout_height="wrap_content" android:layout_weight="1"
+                                android:text="L" android:gravity="center"/>
+                            <CheckBox android:id="@+id/cbV2Tue" android:layout_width="0dp"
+                                android:layout_height="wrap_content" android:layout_weight="1"
+                                android:text="M" android:gravity="center"/>
+                            <CheckBox android:id="@+id/cbV2Wed" android:layout_width="0dp"
+                                android:layout_height="wrap_content" android:layout_weight="1"
+                                android:text="X" android:gravity="center"/>
+                            <CheckBox android:id="@+id/cbV2Thu" android:layout_width="0dp"
+                                android:layout_height="wrap_content" android:layout_weight="1"
+                                android:text="J" android:gravity="center"/>
+                            <CheckBox android:id="@+id/cbV2Fri" android:layout_width="0dp"
+                                android:layout_height="wrap_content" android:layout_weight="1"
+                                android:text="V" android:gravity="center"/>
+                            <CheckBox android:id="@+id/cbV2Sat" android:layout_width="0dp"
+                                android:layout_height="wrap_content" android:layout_weight="1"
+                                android:text="S" android:gravity="center"/>
+                            <CheckBox android:id="@+id/cbV2Sun" android:layout_width="0dp"
+                                android:layout_height="wrap_content" android:layout_weight="1"
+                                android:text="D" android:gravity="center"/>
+                        </LinearLayout>
+
                     </LinearLayout>
-
-                    <LinearLayout
-                        android:id="@+id/llVisitDaysParent2"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-
-                        <CheckBox android:id="@+id/cbV2Mon" android:layout_width="0dp"
-                            android:layout_height="wrap_content" android:layout_weight="1"
-                            android:text="L" android:gravity="center"
-                            android:layoutDirection="rtl"/>
-                        <CheckBox android:id="@+id/cbV2Tue" android:layout_width="0dp"
-                            android:layout_height="wrap_content" android:layout_weight="1"
-                            android:text="M" android:gravity="center"
-                            android:layoutDirection="rtl"/>
-                        <CheckBox android:id="@+id/cbV2Wed" android:layout_width="0dp"
-                            android:layout_height="wrap_content" android:layout_weight="1"
-                            android:text="X" android:gravity="center"
-                            android:layoutDirection="rtl"/>
-                        <CheckBox android:id="@+id/cbV2Thu" android:layout_width="0dp"
-                            android:layout_height="wrap_content" android:layout_weight="1"
-                            android:text="J" android:gravity="center"
-                            android:layoutDirection="rtl"/>
-                        <CheckBox android:id="@+id/cbV2Fri" android:layout_width="0dp"
-                            android:layout_height="wrap_content" android:layout_weight="1"
-                            android:text="V" android:gravity="center"
-                            android:layoutDirection="rtl"/>
-                        <CheckBox android:id="@+id/cbV2Sat" android:layout_width="0dp"
-                            android:layout_height="wrap_content" android:layout_weight="1"
-                            android:text="S" android:gravity="center"
-                            android:layoutDirection="rtl"/>
-                        <CheckBox android:id="@+id/cbV2Sun" android:layout_width="0dp"
-                            android:layout_height="wrap_content" android:layout_weight="1"
-                            android:text="D" android:gravity="center"
-                            android:layoutDirection="rtl"/>
-                    </LinearLayout>
-                </LinearLayout>
-
                 </com.google.android.material.card.MaterialCardView>
+
                 <!-- ─────────────────────────────────────────────────────── -->
                 <!-- Card Años Pares/Impares -->
                 <com.google.android.material.card.MaterialCardView

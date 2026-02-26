@@ -12,7 +12,7 @@ class CustodyViewModel : ViewModel() {
     // Patrón de custodia
     var custodyPattern: CustodyPattern = AlternateWeeks(startWithParent = 1)
 
-    // NUEVA LÓGICA: Configuración de fecha de inicio del patrón
+    // Configuración de fecha de inicio del patrón
     var startDate: LocalDate = LocalDate.now()
     var patternStartsWithParent: Int = 1
     var patternApplicationMode: String = "FORWARD"
@@ -96,6 +96,17 @@ class CustodyViewModel : ViewModel() {
 
     // ─── VISITAS: helper ──────────────────────────────────────
     fun getVisitParent(date: LocalDate): ParentType? {
+        // Comprobar verano (1 julio - 31 agosto, siempre)
+        val summerRange = LocalDate.of(date.year, 7, 1)..LocalDate.of(date.year, 8, 31)
+
+        // Si el día cae en un período especial, no hay visita
+        val enPeriodoEspecial = date in summerRange
+                || summerEvents.any { date in it.startDate..it.endDate }
+                || noCustodyPeriods.any { date in it.startDate..it.endDate }
+                || specialDates.any { it.date == date }
+
+        if (enPeriodoEspecial) return null
+
         val dow = date.dayOfWeek.value
         return when {
             dow in visitDaysParent1 -> ParentType.PARENT1
