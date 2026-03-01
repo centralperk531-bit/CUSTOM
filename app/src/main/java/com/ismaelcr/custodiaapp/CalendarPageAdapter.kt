@@ -82,7 +82,7 @@ class CalendarPagerAdapter(
             val isSpecialPeriod = custody.parent == ParentType.NONE
                     || viewModel.summerEvents.any { date in it.startDate..it.endDate }
                     || viewModel.noCustodyPeriods.any { date in it.startDate..it.endDate }
-            val visitParent = if (!isSpecialPeriod) viewModel.getVisitParent(date) else null
+            val visitParent = if (!isSpecialPeriod) viewModel.getVisitParent(date, custody.parent) else null
             val isVisitFromSpecial = viewModel.specialDates.any {
                 it.date == date && it.description == "Visita"
             }
@@ -139,7 +139,7 @@ class CalendarPagerAdapter(
     }
 
 
-q    override fun getItemCount(): Int {
+    override fun getItemCount(): Int {
         return (endMonth.year - startMonth.year) * 12 +
                 (endMonth.monthValue - startMonth.monthValue) + 1
 

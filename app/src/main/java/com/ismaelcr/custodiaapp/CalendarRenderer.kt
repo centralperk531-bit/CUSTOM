@@ -94,7 +94,7 @@ class CalendarRenderer(
             val isSpecialPeriod = custody.parent == ParentType.NONE
                     || viewModel.summerEvents.any { date in it.startDate..it.endDate }
                     || viewModel.noCustodyPeriods.any { date in it.startDate..it.endDate }
-            val visitParent = if (!isSpecialPeriod) viewModel.getVisitParent(date) else null
+            val visitParent = if (!isSpecialPeriod) viewModel.getVisitParent(date, custody.parent) else null
 
             // La visita solo aplica si el padre visitante es DISTINTO al custodio del día
             val isVisitFromSpecial = viewModel.specialDates.any {

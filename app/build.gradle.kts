@@ -19,8 +19,8 @@ android {
         applicationId = "com.ismaelcr.custodiaapp"
         minSdk = 26
         targetSdk = 35
-        versionCode = 11
-        versionName = "3.2.0"
+        versionCode = 12
+        versionName = "4.0.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -34,6 +34,10 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+        }
+        debug {
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
         }
     }
 

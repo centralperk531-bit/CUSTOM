@@ -95,11 +95,9 @@ class CustodyViewModel : ViewModel() {
     }
 
     // ─── VISITAS: helper ──────────────────────────────────────
-    fun getVisitParent(date: LocalDate): ParentType? {
-        // Comprobar verano (1 julio - 31 agosto, siempre)
+    fun getVisitParent(date: LocalDate, custodyParent: ParentType): ParentType? {
         val summerRange = LocalDate.of(date.year, 7, 1)..LocalDate.of(date.year, 8, 31)
 
-        // Si el día cae en un período especial, no hay visita
         val enPeriodoEspecial = date in summerRange
                 || summerEvents.any { date in it.startDate..it.endDate }
                 || noCustodyPeriods.any { date in it.startDate..it.endDate }
@@ -109,11 +107,12 @@ class CustodyViewModel : ViewModel() {
 
         val dow = date.dayOfWeek.value
         return when {
-            dow in visitDaysParent1 -> ParentType.PARENT1
-            dow in visitDaysParent2 -> ParentType.PARENT2
+            custodyParent == ParentType.PARENT2 && dow in visitDaysParent1 -> ParentType.PARENT1
+            custodyParent == ParentType.PARENT1 && dow in visitDaysParent2 -> ParentType.PARENT2
             else -> null
         }
     }
+
     // ──────────────────────────────────────────────────────────
 
     fun getDayInfo(date: LocalDate): CustodyDay {
