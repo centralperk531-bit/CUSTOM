@@ -92,8 +92,12 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         initializeViewModel()
+        if (preferencesManager.hasConfiguration()) {
+            preferencesManager.loadConfiguration(viewModel)
+        }
         setupUI()
     }
+
     private fun setupUI() {
         setupTabs()
         setupViewPager()
@@ -120,14 +124,6 @@ class MainActivity : AppCompatActivity() {
                 Toast.makeText(this, "Error: $error", Toast.LENGTH_LONG).show()
             }
         )
-
-        if (preferencesManager.hasConfiguration()) {  // ← Esta línea ya existe
-            preferencesManager.loadConfiguration(viewModel)
-        }
-
-        if (preferencesManager.hasConfiguration()) {
-            preferencesManager.loadConfiguration(viewModel)
-        }
 
         edtParent1.setText(viewModel.parent1Name)
         edtParent2.setText(viewModel.parent2Name)
@@ -451,6 +447,7 @@ class MainActivity : AppCompatActivity() {
         tvVisitParent2Label.text = "Visitas ${viewModel.parent2Name}"
 
         val p1 = viewModel.visitDaysParent1
+        android.util.Log.d("DEBUG", "p1 antes de cargar: $p1")  // 👈 AÑADE
         cbV1Mon.isChecked = 1 in p1
         cbV1Tue.isChecked = 2 in p1
         cbV1Wed.isChecked = 3 in p1
@@ -460,6 +457,7 @@ class MainActivity : AppCompatActivity() {
         cbV1Sun.isChecked = 7 in p1
 
         val p2 = viewModel.visitDaysParent2
+        android.util.Log.d("DEBUG", "p2 antes de cargar: $p2")
         cbV2Mon.isChecked = 1 in p2
         cbV2Tue.isChecked = 2 in p2
         cbV2Wed.isChecked = 3 in p2
@@ -2723,7 +2721,7 @@ class MainActivity : AppCompatActivity() {
                 .setCancelable(false)
                 .setPositiveButton("Reiniciar ahora") { _, _ ->
                     // Recargar configuración en el viewModel
-                    preferencesManager.loadConfiguration(viewModel)
+                //   preferencesManager.loadConfiguration(viewModel)
 
                     // Reiniciar la Activity para refrescar toda la UI
                     recreate()

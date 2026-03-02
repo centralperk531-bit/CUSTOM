@@ -228,7 +228,12 @@ class PreferencesManager(context: Context) {
 
             // Días de visita
             viewModel.visitDaysParent1 = parseIntList(prefs.getString(KEY_VISIT_DAYS_PARENT1, ""))
+            Log.d("PREFS", "KEY_VISIT_DAYS_PARENT1 raw: ${prefs.getString(KEY_VISIT_DAYS_PARENT1, "")}")
+            Log.d("PREFS", "KEY_VISIT_DAYS_PARENT1 parsed: ${viewModel.visitDaysParent1}")
+
             viewModel.visitDaysParent2 = parseIntList(prefs.getString(KEY_VISIT_DAYS_PARENT2, ""))
+            Log.d("PREFS", "KEY_VISIT_DAYS_PARENT2 raw: ${prefs.getString(KEY_VISIT_DAYS_PARENT2, "")}")
+            Log.d("PREFS", "KEY_VISIT_DAYS_PARENT2 parsed: ${viewModel.visitDaysParent2}")
 
             // Cargar cambios de patrón
             loadPatternChanges(viewModel)

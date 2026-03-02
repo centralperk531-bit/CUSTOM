@@ -91,8 +91,7 @@ class CalendarPagerAdapter(
             val bgColor = when {
                 calendarRenderer.rangeSelectionManager?.isDateInRange(date) == true ->
                     Color.parseColor("#7EDC82")
-                isVisitDay -> Color.parseColor("#F8BBD0")
-                else -> baseBgColor
+                else -> baseBgColor   // 👈 ya no usamos visitColor como fondo
             }
 
             val luminance = with(bgColor) {
@@ -103,7 +102,7 @@ class CalendarPagerAdapter(
             }
             val textColor = if (luminance < 0.50) Color.WHITE else Color.BLACK
 
-            cells.add(CalendarCell(date, bgColor, textColor, day.toString()))
+            cells.add(CalendarCell(date, bgColor, textColor, day.toString(), isVisit = isVisitDay))
         }
 
         // Celdas vacías al final para completar la última fila
