@@ -305,14 +305,20 @@ class MainActivity : AppCompatActivity() {
         }
 
         findViewById<Button>(R.id.btnSearch).setOnClickListener { searchCustody() }
+
         findViewById<Button>(R.id.btnSaveConfig).setOnClickListener { saveConfiguration() }
+
         findViewById<View>(R.id.btnSaveConfigCalendar).setOnClickListener {
             saveConfiguration()
         }
+
         findViewById<Button>(R.id.btnManageSpecialDates).setOnClickListener { showSpecialDatesManager() }
+
         findViewById<Button>(R.id.btnPremium).setOnClickListener {
-            // Esto es lo único que debe haber ahora:
-            billingManager.launchPurchaseFlow(this)
+            supportFragmentManager.beginTransaction()
+                .replace(R.id.tabContentContainer, PremiumFragment())
+                .addToBackStack("Premium")
+                .commit()
         }
 
         findViewById<Button>(R.id.btnManagePatternChanges).setOnClickListener {
@@ -320,11 +326,13 @@ class MainActivity : AppCompatActivity() {
                 adManager.showAdIfNotPremium(this) { showPatternChangesManager() }
             }
         }
+
         findViewById<Button>(R.id.btnManageNoCustody).setOnClickListener {
             if (checkTrialOrShowExpiredDialog()) {
                 adManager.showAdIfNotPremium(this) { showPeriodsManager() }
             }
         }
+
         findViewById<Button>(R.id.btnManageChristmas).setOnClickListener {
             if (checkTrialOrShowExpiredDialog()) {
                 adManager.showAdIfNotPremium(this) { showChristmasManager() }
@@ -2715,19 +2723,22 @@ class MainActivity : AppCompatActivity() {
         val result = backupManager.restoreBackup(uri)
 
         if (result.isSuccess) {
-            // ← AQUÍ ESTABA EL BUG: FALTABA ESTO
-            preferencesManager.loadConfiguration(viewModel)
-
             MaterialAlertDialogBuilder(this)
                 .setTitle("✅ Backup Restaurado")
-                .setMessage("✅ Verano y Navidad cargados")
+                .setMessage("El backup se ha restaurado correctamente.\n\nLa aplicación se reiniciará para aplicar los cambios.")
                 .setCancelable(false)
-                .setPositiveButton("OK") { _, _ -> recreate() }
+                .setPositiveButton("Reiniciar ahora") { _, _ ->
+                    // Recargar configuración en el viewModel
+                //   preferencesManager.loadConfiguration(viewModel)
+
+                    // Reiniciar la Activity para refrescar toda la UI
+                    recreate()
+                }
                 .show()
         } else {
             MaterialAlertDialogBuilder(this)
-                .setTitle("❌ Error")
-                .setMessage(result.exceptionOrNull()?.message ?: "Error desconocido")
+                .setTitle("❌ Error al Restaurar")
+                .setMessage("No se pudo restaurar el backup:\n\n${result.exceptionOrNull()?.message}")
                 .setPositiveButton("OK", null)
                 .show()
         }
