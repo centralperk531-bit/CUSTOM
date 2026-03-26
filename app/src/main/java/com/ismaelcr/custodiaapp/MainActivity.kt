@@ -2715,22 +2715,19 @@ class MainActivity : AppCompatActivity() {
         val result = backupManager.restoreBackup(uri)
 
         if (result.isSuccess) {
+            // ← AQUÍ ESTABA EL BUG: FALTABA ESTO
+            preferencesManager.loadConfiguration(viewModel)
+
             MaterialAlertDialogBuilder(this)
                 .setTitle("✅ Backup Restaurado")
-                .setMessage("El backup se ha restaurado correctamente.\n\nLa aplicación se reiniciará para aplicar los cambios.")
+                .setMessage("✅ Verano y Navidad cargados")
                 .setCancelable(false)
-                .setPositiveButton("Reiniciar ahora") { _, _ ->
-                    // Recargar configuración en el viewModel
-                //   preferencesManager.loadConfiguration(viewModel)
-
-                    // Reiniciar la Activity para refrescar toda la UI
-                    recreate()
-                }
+                .setPositiveButton("OK") { _, _ -> recreate() }
                 .show()
         } else {
             MaterialAlertDialogBuilder(this)
-                .setTitle("❌ Error al Restaurar")
-                .setMessage("No se pudo restaurar el backup:\n\n${result.exceptionOrNull()?.message}")
+                .setTitle("❌ Error")
+                .setMessage(result.exceptionOrNull()?.message ?: "Error desconocido")
                 .setPositiveButton("OK", null)
                 .show()
         }
