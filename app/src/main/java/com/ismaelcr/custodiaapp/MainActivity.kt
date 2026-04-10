@@ -2728,10 +2728,15 @@ class MainActivity : AppCompatActivity() {
                 .setMessage("El backup se ha restaurado correctamente.\n\nLa aplicación se reiniciará para aplicar los cambios.")
                 .setCancelable(false)
                 .setPositiveButton("Reiniciar ahora") { _, _ ->
-                    // Recargar configuración en el viewModel
-                //   preferencesManager.loadConfiguration(viewModel)
-
-                    // Reiniciar la Activity para refrescar toda la UI
+                    preferencesManager.loadConfiguration(viewModel)
+                    edtParent1.setText(viewModel.parent1Name)
+                    edtParent2.setText(viewModel.parent2Name)
+                    edtStartDate.setText(viewModel.startDate.format(
+                        DateTimeFormatter.ofPattern("dd/MM/yyyy")))
+                    loadVisitDaysToUI()
+                    syncSpinnersWithViewModel()
+                    setupDynamicParentSpinners()
+                    updateDisplay()
                     recreate()
                 }
                 .show()
